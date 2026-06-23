@@ -82,35 +82,42 @@ and analysis modules. CI runs typecheck + lint + test + build.
 
 ## Fresh backlog (pick top-down; each item lists acceptance criteria)
 
-### 1. Gapping/bag recommendation engine
-Turn gapping flags into prescriptive advice: ideal loft/gap progression, "add a club here",
-"this club is redundant", and a target carry for each slot. Pure, tested.
-- **Accept:** a `recommendBagChanges(...)` pure module with tests over crafted bags (a hole, an
-  overlap, an inversion); surfaced in the Recommendations panel without over-claiming.
+### ✅ Done this round
+- **Bag-recommendation engine** (`src/lib/bagAdvice.ts`): typical-gap progression, holes with a
+  target carry, overlaps, inversions — scoped to the actionable scoring region. Feeds
+  recommendations + a "Bag structure" dashboard panel.
+- **Stopping-power & total-distance** (`src/lib/stats/stopping.ts`): roll/descent → lands
+  soft/medium/hot for scoring clubs; long clubs described, not judged. On Club detail.
+- **Component/integration tests**: jsdom + Testing Library + fake-indexeddb cover `ConfirmDialog`
+  (focus/keyboard) and the `DataProvider` IndexedDB seed→analysis path. Suite is ~119 tests.
 
-### 2. Session/round metadata
+### 1. Session/round metadata
 Let users name sessions and tag conditions (indoor/outdoor, wind, temperature, ball). Use tags
 to caveat comparisons (e.g. don't compare an indoor session's carry to outdoor).
 - **Accept:** schema + store changes are backward compatible; `/changes` warns when comparing
   across differing conditions; tests cover the tagging + comparison gating.
 
-### 3. Component/integration tests
-Add React Testing Library tests for the import flow (upload → map → confirm) and the per-shot
-exclusion toggle, plus optionally a Playwright smoke test of the seeded dashboard.
-- **Accept:** tests run in CI; cover at least the import happy path and an exclusion round-trip.
-
-### 4. Stopping-power & total-distance analysis
-Analyze descent angle and total (roll) alongside carry, so wedges/long clubs are judged on how
-they actually stop. Add a per-club "lands soft/hot" read where descent data exists.
-- **Accept:** pure, tested; degrades gracefully without descent data.
-
-### 5. Data safety polish
-Undo for destructive actions (or a trash/restore window), an export reminder, and migration to
-OPFS/larger storage if datasets grow. 
-
-### 6. Display-unit toggle
+### 2. Display-unit toggle (careful — cross-cutting)
 A global meters/yards (and m/s) *display* toggle, independent of stored canonical yards/mph.
-- **Accept:** stored data stays canonical; only presentation changes; tested formatter.
+Note: many human-readable strings (recommendations, trend/adequacy messages, bag advice) bake
+"yds" into prose, so a correct toggle needs those generators to be unit-aware (pass a formatter
+in) — not just the table numbers and chart axes. Do it thoroughly or not at all.
+- **Accept:** stored data stays canonical; numbers, chart axes AND generated prose all convert;
+  tested formatter; no mixed-unit displays.
+
+### 3. Import flow component test
+The integration tests cover persistence but not the upload→map→confirm UI. Add a Testing Library
+test driving the import page with a small in-memory CSV (the transform is already unit-tested;
+this covers the wiring).
+- **Accept:** runs in CI; asserts a mapped import adds shots and shows the done screen.
+
+### 4. Data safety polish
+Undo for destructive actions (or a trash/restore window), an export reminder, and migration to
+OPFS/larger storage if datasets grow.
+
+### 5. Playwright smoke (optional)
+One end-to-end test of the seeded dashboard + a navigation, gated behind a separate script so it
+doesn't slow the unit run.
 
 ## How to run & verify
 
