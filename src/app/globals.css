@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-ink-800 antialiased;
+}
+
+.card {
+  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+.btn-primary {
+  @apply btn bg-fairway-600 text-white hover:bg-fairway-700;
+}
+.btn-ghost {
+  @apply btn border border-slate-300 bg-white text-ink-700 hover:bg-slate-50;
+}
+
+.input {
+  @apply w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-fairway-500 focus:outline-none focus:ring-1 focus:ring-fairway-500;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold;
+}
+.badge-ok {
+  @apply badge bg-fairway-100 text-fairway-700;
+}
+.badge-warn {
+  @apply badge bg-amber-100 text-amber-700;
+}
+.badge-danger {
+  @apply badge bg-rose-100 text-rose-700;
+}
+.badge-muted {
+  @apply badge bg-slate-100 text-slate-600;
+}
+
+table.data {
+  @apply w-full text-sm;
+}
+table.data th {
+  @apply px-3 py-2 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide;
+}
+table.data td {
+  @apply px-3 py-2 border-t border-slate-100;
+}
