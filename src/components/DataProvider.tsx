@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { AppSettings, ClubAlias, Shot } from "@/lib/domain/types";
+import type { AppSettings, ClubAlias, SessionMeta, Shot } from "@/lib/domain/types";
 import { DEFAULT_SETTINGS } from "@/lib/domain/types";
 import { analyzeBag, type BagAnalysis } from "@/lib/analysis";
 import { registerBuiltinAdapters } from "@/lib/import/builtinAdapters";
@@ -22,8 +22,10 @@ interface DataContextValue {
   shots: Shot[];
   settings: AppSettings;
   aliases: ClubAlias[];
+  sessionMeta: SessionMeta[];
   analysis: BagAnalysis | null;
   reload: () => Promise<void>;
+  saveSessionMeta: (meta: SessionMeta) => Promise<void>;
   updateSettings: (s: AppSettings) => Promise<void>;
   addShots: (shots: Shot[]) => Promise<void>;
   saveShot: (shot: Shot) => Promise<void>;
@@ -42,16 +44,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [shots, setShots] = useState<Shot[]>([]);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [aliases, setAliases] = useState<ClubAlias[]>([]);
+  const [sessionMeta, setSessionMeta] = useState<SessionMeta[]>([]);
 
   const reload = useCallback(async () => {
-    const [allShots, s, al] = await Promise.all([
+    const [allShots, s, al, sm] = await Promise.all([
       db.getAllShots(),
       db.getSettings(),
       db.getAliases(),
+      db.getAllSessionMeta(),
     ]);
     setShots(allShots);
     setSettings(s);
     setAliases(al);
+    setSessionMeta(sm);
   }, []);
 
   useEffect(() => {
@@ -79,8 +84,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     shots,
     settings,
     aliases,
+    sessionMeta,
     analysis,
     reload,
+    saveSessionMeta: async (meta) => {
+      await db.putSessionMeta(meta);
+      await reload();
+    },
     updateSettings: async (s) => {
       await db.saveSettings(s);
       setSettings(s);

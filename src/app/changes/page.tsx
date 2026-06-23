@@ -9,11 +9,17 @@ import { fmt } from "@/components/badges";
 
 export default function ChangesPage() {
   usePageTitle("Changes");
-  const { loading, shots, settings } = useData();
+  const { loading, shots, settings, sessionMeta } = useData();
+
+  const envBySession = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const s of sessionMeta) if (s.environment) m[s.id] = s.environment;
+    return m;
+  }, [sessionMeta]);
 
   const diff = useMemo(
-    () => diffLatestSession(shots, settings),
-    [shots, settings],
+    () => diffLatestSession(shots, settings, envBySession),
+    [shots, settings, envBySession],
   );
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
@@ -45,6 +51,16 @@ export default function ChangesPage() {
           called real when it exceeds the combined confidence intervals.
         </p>
       </div>
+
+      {diff.conditionWarning && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          {diff.conditionWarning}{" "}
+          <Link href="/sessions" className="underline">
+            Tag your sessions
+          </Link>{" "}
+          to sharpen this comparison.
+        </p>
+      )}
 
       <section
         className={`card border-l-4 p-4 ${changed.length ? "border-l-amber-500" : "border-l-fairway-500"}`}

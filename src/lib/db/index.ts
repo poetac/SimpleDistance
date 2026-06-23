@@ -6,13 +6,14 @@ import type {
   AppSettings,
   ClubAlias,
   ImportRecord,
+  SessionMeta,
   Shot,
 } from "../domain/types";
 import { DEFAULT_SETTINGS } from "../domain/types";
 import { generateSeedShots } from "./seed";
 
 const DB_NAME = "simpledistance";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 interface SDSchema extends DBSchema {
   shots: {
@@ -22,6 +23,7 @@ interface SDSchema extends DBSchema {
   };
   aliases: { key: string; value: ClubAlias };
   imports: { key: string; value: ImportRecord };
+  sessions: { key: string; value: SessionMeta };
   meta: { key: string; value: unknown };
 }
 
@@ -33,13 +35,18 @@ function getDb(): Promise<IDBPDatabase<SDSchema>> {
   }
   if (!dbPromise) {
     dbPromise = openDB<SDSchema>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        const shots = db.createObjectStore("shots", { keyPath: "id" });
-        shots.createIndex("byClub", "club");
-        shots.createIndex("bySession", "sessionId");
-        db.createObjectStore("aliases", { keyPath: "raw" });
-        db.createObjectStore("imports", { keyPath: "id" });
-        db.createObjectStore("meta");
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          const shots = db.createObjectStore("shots", { keyPath: "id" });
+          shots.createIndex("byClub", "club");
+          shots.createIndex("bySession", "sessionId");
+          db.createObjectStore("aliases", { keyPath: "raw" });
+          db.createObjectStore("imports", { keyPath: "id" });
+          db.createObjectStore("meta");
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore("sessions", { keyPath: "id" });
+        }
       },
     });
   }
@@ -104,12 +111,14 @@ export async function clearAllShots(): Promise<void> {
   const db = await getDb();
   await db.clear("shots");
   await db.clear("imports");
+  await db.clear("sessions");
 }
 
 export async function reseed(): Promise<void> {
   const db = await getDb();
   await db.clear("shots");
   await db.clear("imports");
+  await db.clear("sessions");
   await db.delete("meta", "seeded");
   seedingPromise = null; // allow ensureSeeded to run again
   await ensureSeeded();
@@ -138,6 +147,24 @@ export async function deleteAlias(raw: string): Promise<void> {
   await db.delete("aliases", raw.toLowerCase());
 }
 
+// --- Session metadata ---
+export async function getAllSessionMeta(): Promise<SessionMeta[]> {
+  const db = await getDb();
+  return db.getAll("sessions");
+}
+
+export async function getSessionMetaMap(): Promise<Record<string, SessionMeta>> {
+  const all = await getAllSessionMeta();
+  const map: Record<string, SessionMeta> = {};
+  for (const m of all) map[m.id] = m;
+  return map;
+}
+
+export async function putSessionMeta(meta: SessionMeta): Promise<void> {
+  const db = await getDb();
+  await db.put("sessions", meta);
+}
+
 // --- Imports ---
 export async function getImports(): Promise<ImportRecord[]> {
   const db = await getDb();
@@ -156,13 +183,15 @@ export interface BackupBundle {
   shots: Shot[];
   aliases: ClubAlias[];
   settings: AppSettings;
+  sessions?: SessionMeta[];
 }
 
 export async function exportBundle(): Promise<BackupBundle> {
-  const [shots, aliases, settings] = await Promise.all([
+  const [shots, aliases, settings, sessions] = await Promise.all([
     getAllShots(),
     getAliases(),
     getSettings(),
+    getAllSessionMeta(),
   ]);
   return {
     version: 1,
@@ -170,6 +199,7 @@ export async function exportBundle(): Promise<BackupBundle> {
     shots,
     aliases,
     settings,
+    sessions,
   };
 }
 
@@ -192,6 +222,7 @@ export async function importBundle(
   await Promise.all(bundle.shots.map((s) => tx.store.put(s)));
   await tx.done;
   for (const a of bundle.aliases ?? []) await putAlias(a);
+  for (const s of bundle.sessions ?? []) await putSessionMeta(s);
   if (bundle.settings) await saveSettings(bundle.settings);
   await db.put("meta", true, "seeded");
   return { shots: bundle.shots.length };

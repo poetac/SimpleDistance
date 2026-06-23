@@ -66,6 +66,20 @@ export interface ClubAlias {
   club: ClubId;
 }
 
+export type SessionEnvironment = "indoor" | "outdoor" | "unknown";
+
+/** Optional, user-editable metadata for a session/round. Backward compatible:
+ *  sessions without a record behave as `environment: "unknown"`. */
+export interface SessionMeta {
+  /** Matches Shot.sessionId. */
+  id: string;
+  name?: string;
+  environment?: SessionEnvironment;
+  /** Ball model, e.g. "Pro V1" or "range ball". */
+  ball?: string;
+  notes?: string;
+}
+
 /** Which distance metric to analyze. */
 export type YardageMetric = "carry" | "total";
 

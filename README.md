@@ -69,10 +69,18 @@ units are normalized on import.
 
 ### Other things you can do
 
-- **Dashboard:** filter the whole analysis to a single **session** vs. all sessions.
+- **Dashboard:** filter the whole analysis to a single **session** vs. all sessions, plus a
+  "Bag structure" panel (typical gap, holes/overlaps/inversions, confidence-gated).
+- **Optimize:** a **14-club bag optimizer** — an even target gap ladder across your scoring
+  clubs (driver/woods kept as anchors) showing which clubs match, which want a loft adjust,
+  where to add a club (with a target carry), which are redundant, and whether you're within
+  the 14-club budget. Built only from trustworthy clubs.
 - **Changes:** a "what changed since last session" view — your latest session vs. a baseline
   of all prior sessions, flagging only moves that exceed the combined confidence intervals
-  (no false alarms for normal variation) and labeling insufficient-sample clubs.
+  (no false alarms for normal variation), labeling insufficient-sample clubs, and **warning
+  when it's comparing across different conditions** (e.g. indoor vs. outdoor).
+- **Sessions:** tag each session's conditions (name, indoor/outdoor, ball) so the Changes
+  view can caveat condition-driven differences.
 - **Shots page:** add, **edit**, and delete individual shots; filter by club; toggle whether
   each shot feeds the stats.
 - **Club detail:** carry distribution, session-over-session trend, a **dispersion scatter**

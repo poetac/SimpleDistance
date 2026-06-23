@@ -30,6 +30,8 @@ export interface SessionDiff {
   latestSessionId: string;
   baselineSessionIds: string[];
   rows: ClubSessionDelta[];
+  /** Set when the latest session's conditions differ from the baseline's. */
+  conditionWarning?: string;
 }
 
 /** Order sessions oldest→newest. Uses max timestamp when present, else the id. */
@@ -52,12 +54,29 @@ function orderSessions(shots: Shot[]): string[] {
 export function diffLatestSession(
   shots: Shot[],
   settings: AppSettings,
+  envBySession?: Record<string, string>,
 ): SessionDiff | null {
   const sessions = orderSessions(shots);
   if (sessions.length < 2) return null;
 
   const latestSessionId = sessions[sessions.length - 1];
   const baselineSessionIds = sessions.slice(0, -1);
+
+  // Caveat the comparison when conditions differ (e.g. indoor vs outdoor).
+  let conditionWarning: string | undefined;
+  if (envBySession) {
+    const known = (id: string) => {
+      const e = envBySession[id];
+      return e && e !== "unknown" ? e : undefined;
+    };
+    const latestEnv = known(latestSessionId);
+    const baselineEnvs = new Set(
+      baselineSessionIds.map(known).filter((e): e is string => !!e),
+    );
+    if (latestEnv && (baselineEnvs.size > 1 || (baselineEnvs.size === 1 && !baselineEnvs.has(latestEnv)))) {
+      conditionWarning = `This session was ${latestEnv}, but the baseline mixes ${[...baselineEnvs].join(" / ")} conditions — distance differences may reflect conditions, not your swing or equipment.`;
+    }
+  }
 
   const latestShots = shots.filter((s) => s.sessionId === latestSessionId);
   const baselineShots = shots.filter((s) => s.sessionId !== latestSessionId);
@@ -116,5 +135,5 @@ export function diffLatestSession(
     };
   });
 
-  return { latestSessionId, baselineSessionIds, rows };
+  return { latestSessionId, baselineSessionIds, rows, conditionWarning };
 }

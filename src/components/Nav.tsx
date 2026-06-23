@@ -9,6 +9,7 @@ const links = [
   { href: "/changes", label: "Changes" },
   { href: "/import", label: "Import" },
   { href: "/shots", label: "Shots" },
+  { href: "/sessions", label: "Sessions" },
   { href: "/settings", label: "Settings" },
 ];
 
