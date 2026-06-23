@@ -21,6 +21,12 @@ export interface TransformOptions {
   fallbackSessionId?: string;
 }
 
+export interface SkipReasons {
+  missingClub: number;
+  unrecognizedClub: number;
+  missingDistance: number;
+}
+
 export interface TransformResult {
   shots: Shot[];
   warnings: string[];
@@ -28,6 +34,8 @@ export interface TransformResult {
   unmappedClubs: string[];
   rowsParsed: number;
   rowsSkipped: number;
+  /** Why rows were quarantined, so the UI can explain skips precisely. */
+  skipReasons: SkipReasons;
 }
 
 /**
@@ -110,6 +118,11 @@ export function rowsToShots(
   const warnings: string[] = [];
   const unmapped = new Set<string>();
   const shots: Shot[] = [];
+  const skipReasons: SkipReasons = {
+    missingClub: 0,
+    unrecognizedClub: 0,
+    missingDistance: 0,
+  };
   let skipped = 0;
 
   const get = (row: Record<string, string>, field: keyof ColumnMapping) => {
@@ -123,12 +136,14 @@ export function rowsToShots(
   table.rows.forEach((row, i) => {
     const rawClub = get(row, "club");
     if (!rawClub || rawClub.trim() === "") {
+      skipReasons.missingClub++;
       skipped++;
       return;
     }
     const club = normalizeClub(rawClub, opts.aliases);
     if (!club) {
       unmapped.add(rawClub.trim());
+      skipReasons.unrecognizedClub++;
       skipped++;
       return;
     }
@@ -139,6 +154,7 @@ export function rowsToShots(
       warnings.push(
         `Row ${i + 1} (${rawClub}): no valid carry or total distance — skipped.`,
       );
+      skipReasons.missingDistance++;
       skipped++;
       return;
     }
@@ -183,5 +199,6 @@ export function rowsToShots(
     unmappedClubs: [...unmapped],
     rowsParsed: shots.length,
     rowsSkipped: skipped,
+    skipReasons,
   };
 }

@@ -146,9 +146,16 @@ CSV exports vary, so import is a 3-step flow (**Upload → Map columns → Confi
 3. **You confirm/adjust** the mapping, source preset, and units in the UI, see a live
    preview, and import. Re-imports of the same source reuse the same mapping.
 
-Number parsing is **locale-aware**: `150,5` (European decimal comma) and `1,505` (US
-thousands) are both read correctly, so meters-and-commas exports aren't silently 10×'d.
-Negative carries/totals are rejected rather than corrupting an average. Distances are
+The pipeline is built to be **robust to messy real-world exports**: it auto-detects the
+delimiter (comma, **semicolon**, **tab**, or pipe), strips a UTF-8 **BOM**, skips blank/ragged
+rows, and tolerates extra columns. Number parsing is **locale-aware**: `150,5` (European
+decimal comma) and `1,505` (US thousands) are both read correctly, so meters-and-commas
+exports aren't silently 10×'d. Club labels survive hyphens/underscores (`3-iron`,
+`pitching_wedge`). Negative carries/totals are rejected rather than corrupting an average.
+After import, **plausibility checks** flag a club whose mean carry falls outside a sane band
+for its type (a tell-tale of a wrong column or a meters/yards mix-up), and the result screen
+gives a **categorized quarantine report** (how many rows were skipped for a missing club,
+unrecognized club, or missing distance). Distances are
 yards/meters-aware; **speed** auto-detects mph vs m/s vs km/h by header and magnitude, while
 **distance** units rely on the header/preset (magnitude alone can't tell a driver-in-meters
 from a mid-iron-in-yards) and are always user-confirmable in the import UI.

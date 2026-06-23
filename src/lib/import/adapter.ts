@@ -32,6 +32,10 @@ export interface ImportResult {
   mapping: Partial<Record<CanonicalField, string>>;
   distanceUnit: "yards" | "meters";
   speedUnit: "mph" | "ms" | "kmh";
+  /** Total rows skipped and why (for a clear quarantine report). */
+  rowsSkipped?: number;
+  skipReasons?: { missingClub: number; unrecognizedClub: number; missingDistance: number };
+  unmappedClubs?: string[];
 }
 
 export interface ImportAdapter {

@@ -120,7 +120,8 @@ export function normalizeClub(
   for (const [word, digit] of Object.entries(WORD_NUMBERS)) {
     s = s.replace(new RegExp(`\\b${word}\\b`, "g"), digit);
   }
-  s = s.replace(/[°º]/g, "").replace(/\s+/g, " ").trim();
+  // Hyphens/underscores act as separators ("3-iron", "pitching_wedge").
+  s = s.replace(/[-_]+/g, " ").replace(/[°º]/g, "").replace(/\s+/g, " ").trim();
 
   // Driver
   if (/\b(driver|dr|d)\b/.test(s) || s === "1w") return "DR";

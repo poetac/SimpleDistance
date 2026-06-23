@@ -4,29 +4,38 @@
 import Papa from "papaparse";
 import type { RawTable } from "./adapter";
 
-export function parseCsvText(text: string): RawTable {
-  const result = Papa.parse<Record<string, string>>(text, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (h) => h.trim(),
-  });
+// Delimiters we let papaparse choose between: comma, semicolon (European),
+// tab (TSV), and pipe. Auto-guessing keeps the import resilient to exports that
+// don't use a comma.
+const DELIMITERS_TO_GUESS = [",", ";", "\t", "|"];
+
+function stripBom(s: string): string {
+  return s.charCodeAt(0) === 0xfeff ? s.slice(1) : s;
+}
+
+const PARSE_OPTS = {
+  header: true as const,
+  skipEmptyLines: "greedy" as const,
+  delimitersToGuess: DELIMITERS_TO_GUESS,
+  transformHeader: (h: string) => stripBom(h).trim(),
+};
+
+function toTable(result: Papa.ParseResult<Record<string, string>>): RawTable {
   const headers =
-    result.meta.fields?.map((f) => f.trim()) ?? Object.keys(result.data[0] ?? {});
+    result.meta.fields?.map((f) => stripBom(f).trim()) ??
+    Object.keys(result.data[0] ?? {});
   return { headers, rows: result.data };
+}
+
+export function parseCsvText(text: string): RawTable {
+  return toTable(Papa.parse<Record<string, string>>(stripBom(text), PARSE_OPTS));
 }
 
 export function parseCsvFile(file: File): Promise<RawTable> {
   return new Promise((resolve, reject) => {
     Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (h) => h.trim(),
-      complete: (result) => {
-        const headers =
-          result.meta.fields?.map((f) => f.trim()) ??
-          Object.keys(result.data[0] ?? {});
-        resolve({ headers, rows: result.data });
-      },
+      ...PARSE_OPTS,
+      complete: (result) => resolve(toTable(result)),
       error: (err) => reject(err),
     });
   });

@@ -13,6 +13,7 @@ import {
 import { CANONICAL_FIELDS, REQUIRED_FIELDS, type CanonicalField } from "@/lib/import/schema";
 import { PRESETS } from "@/lib/import/presets";
 import { detectDistanceUnit, detectSpeedUnit } from "@/lib/import/units";
+import { importSanity } from "@/lib/import/sanity";
 import { getAliasMap, addImport } from "@/lib/db";
 import { usePageTitle } from "@/components/usePageTitle";
 
@@ -31,7 +32,12 @@ export default function ImportPage() {
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [distanceUnit, setDistanceUnit] = useState<"yards" | "meters">("yards");
   const [speedUnit, setSpeedUnit] = useState<"mph" | "ms" | "kmh">("mph");
-  const [result, setResult] = useState<{ added: number; warnings: string[]; skipped: number } | null>(null);
+  const [result, setResult] = useState<{
+    added: number;
+    warnings: string[];
+    skipped: number;
+    skipReasons?: { missingClub: number; unrecognizedClub: number; missingDistance: number };
+  } | null>(null);
   const [error, setError] = useState<string>("");
 
   async function handleFile(file: File) {
@@ -103,7 +109,8 @@ export default function ImportPage() {
       distanceUnit,
       speedUnit,
     });
-    const skipped = table.rows.length - res.shots.length;
+    const skipped = res.rowsSkipped ?? table.rows.length - res.shots.length;
+    const warnings = [...res.warnings, ...importSanity(res.shots)];
     if (res.shots.length > 0) {
       await addShots(res.shots);
       await addImport({
@@ -116,7 +123,12 @@ export default function ImportPage() {
       });
     }
     await reload();
-    setResult({ added: res.shots.length, warnings: res.warnings, skipped });
+    setResult({
+      added: res.shots.length,
+      warnings,
+      skipped,
+      skipReasons: res.skipReasons,
+    });
     setStep("done");
   }
 
@@ -301,7 +313,17 @@ export default function ImportPage() {
           </h2>
           {result.skipped > 0 && (
             <p className="mt-1 text-sm text-slate-500">
-              {result.skipped} rows skipped (no distance or unrecognized club).
+              {result.skipped} row{result.skipped === 1 ? "" : "s"} skipped
+              {result.skipReasons &&
+                (() => {
+                  const r = result.skipReasons!;
+                  const parts = [
+                    r.missingClub && `${r.missingClub} missing club`,
+                    r.unrecognizedClub && `${r.unrecognizedClub} unrecognized club`,
+                    r.missingDistance && `${r.missingDistance} missing distance`,
+                  ].filter(Boolean);
+                  return parts.length ? ` — ${parts.join(", ")}.` : ".";
+                })()}
             </p>
           )}
           {result.warnings.length > 0 && (

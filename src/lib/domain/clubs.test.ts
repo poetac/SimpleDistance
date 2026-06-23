@@ -25,6 +25,10 @@ describe("club normalization", () => {
     ["1 iron", "1I"],
     ["driving iron", "1I"],
     ["DI", "1I"],
+    ["3-iron", "3I"],
+    ["7-wood", "7W"],
+    ["pitching-wedge", "PW"],
+    ["5_iron", "5I"],
   ];
 
   for (const [raw, expected] of cases) {

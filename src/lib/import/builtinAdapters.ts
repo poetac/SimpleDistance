@@ -35,7 +35,16 @@ function makeFileAdapter(presetId: string): ImportAdapter {
         aliases: ctx.aliases,
         fallbackSessionId: ctx.fallbackSessionId,
       });
-      return { shots: res.shots, warnings: res.warnings, mapping, distanceUnit, speedUnit };
+      return {
+        shots: res.shots,
+        warnings: res.warnings,
+        mapping,
+        distanceUnit,
+        speedUnit,
+        rowsSkipped: res.rowsSkipped,
+        skipReasons: res.skipReasons,
+        unmappedClubs: res.unmappedClubs,
+      };
     },
   };
 }
@@ -56,7 +65,16 @@ const genericCsvAdapter: ImportAdapter = {
       aliases: ctx.aliases,
       fallbackSessionId: ctx.fallbackSessionId,
     });
-    return { shots: res.shots, warnings: res.warnings, mapping, distanceUnit, speedUnit };
+    return {
+      shots: res.shots,
+      warnings: res.warnings,
+      mapping,
+      distanceUnit,
+      speedUnit,
+      rowsSkipped: res.rowsSkipped,
+      skipReasons: res.skipReasons,
+      unmappedClubs: res.unmappedClubs,
+    };
   },
 };
 
