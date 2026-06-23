@@ -70,12 +70,20 @@ units are normalized on import.
 ### Other things you can do
 
 - **Dashboard:** filter the whole analysis to a single **session** vs. all sessions.
-- **Shots page:** add, **edit**, and delete individual shots; filter the list by club.
-- **Club detail:** carry distribution, session-over-session trend, a **dispersion
-  scatter** (side vs. carry), and hedged equipment-vs-swing hints.
-- **Settings → Data:** **export a JSON backup** or a **CSV** of your shots, and **restore**
-  a backup (merge or replace). Because storage is per-browser, this is how you keep or move
-  your data. The exported CSV re-imports cleanly through the generic mapper.
+- **Changes:** a "what changed since last session" view — your latest session vs. a baseline
+  of all prior sessions, flagging only moves that exceed the combined confidence intervals
+  (no false alarms for normal variation) and labeling insufficient-sample clubs.
+- **Shots page:** add, **edit**, and delete individual shots; filter by club; toggle whether
+  each shot feeds the stats.
+- **Club detail:** carry distribution, session-over-session trend, a **dispersion scatter**
+  (side vs. carry) with side SD / P75 / strike-consistency stats, hedged equipment-vs-swing
+  hints, and a per-shot **Auto / force-include / force-exclude** control (mishits are flagged
+  and counted, never deleted).
+- **Settings:** choose carry vs. total, toggle outlier exclusion, tune the target CI width and
+  the trend thresholds, edit the club-alias table, and **export a JSON backup or CSV** /
+  **restore** a backup (merge or replace). Because storage is per-browser, this is how you keep
+  or move your data; the exported CSV re-imports cleanly through the generic mapper.
+- **Install it:** add to your home screen / install as an app — it works offline.
 
 ---
 

@@ -64,55 +64,53 @@ backup/restore/reseed/clear). `src/components/` — `DataProvider` (React contex
    pass. Add tests with every behavior change. Maintain the a11y baseline (landmarks, labels,
    `scope`, focus, chart text alternatives).
 
-## Prioritized backlog (pick top-down; each item lists acceptance criteria)
+## Already shipped beyond the original spec (do NOT redo)
 
-### 1. Per-shot manual outlier control
-The engine already supports `Shot.excluded`, but the UI never sets it. Add an "exclude this
-shot" toggle on the Shots list and Club detail, persist it, and have `analyzeBag` honor a
-user exclusion independently of the automatic IQR exclusion (so a user can re-include an
-auto-excluded shot or exclude a clean one).
-- **Accept:** toggling persists across reload; the dashboard's excluded count and a club's N
-  reflect manual exclusions; a new unit test asserts manual `excluded` shots are dropped from
-  stats while remaining in the stored data.
+- **Per-shot manual exclusions** — tri-state `Shot.excluded` honored by `analyzeBag` via the
+  shared `src/lib/exclusion.ts`; toggles on Shots list + Club detail.
+- **Trend robustness** — `classifyTrend` takes `TrendOptions`, sample-size-weighted overall
+  deviation; `trendMinSessions`/`trendDeviationSE` in Settings.
+- **Session insights** — `src/lib/sessionDiff.ts` + `/changes` route (CI-aware, no false alarms).
+- **Dispersion module** — `src/lib/stats/dispersion.ts` surfaced on Club detail.
+- **Adapter-driven import + Garmin preset** — flow routes through the `ImportAdapter` registry
+  (`detectFileAdapter`), Garmin signature-header fingerprinting, `samples/garmin-sample.csv`.
+- **Accessible confirm dialogs** — `ConfirmDialog` (focus-trap/ESC) replaces native `confirm()`.
+- **Installable offline PWA** — manifest, service worker, generated icons.
 
-### 2. Trend robustness across uneven sessions
-`classifyTrend` interpolates from neighbor clubs per session. Strengthen it: (a) weight
-session deviations by sample size, (b) expose a configurable minimum-sessions/SE threshold in
-Settings (still named constants as defaults), (c) handle bags where a neighbor is missing in
-some sessions more gracefully.
-- **Accept:** new tests cover a 3-session dataset where one session is tiny (should down-weight,
-  not flip the verdict); existing 5-iron acceptance test still passes; thresholds remain in
-  `constants.ts` with Settings overrides.
+Test suite is ~104 tests across the stats, exclusion, sessionDiff, dispersion, import/adapter,
+and analysis modules. CI runs typecheck + lint + test + build.
 
-### 3. "What changed since last session" view
-A diff view comparing the most recent session's per-club means/flags against the prior
-trustworthy baseline, with plain-English deltas ("7-iron +4 yds vs baseline; still within CI").
-- **Accept:** a pure `diffSessions(...)` (tested) feeds a new route/section; no false alarms
-  when the change is within the CI; clearly labels insufficient-sample clubs.
+## Fresh backlog (pick top-down; each item lists acceptance criteria)
 
-### 4. Dispersion & shot-quality stats
-Add a tested dispersion module: side mean/SD, an ellipse or P75 lateral spread, and a
-strike-consistency proxy from smash/ball-speed variance where present. Surface on club detail.
-- **Accept:** pure module with tests; degrades gracefully when side/launch data is absent
-  (Inrange) rather than rendering NaN.
+### 1. Gapping/bag recommendation engine
+Turn gapping flags into prescriptive advice: ideal loft/gap progression, "add a club here",
+"this club is redundant", and a target carry for each slot. Pure, tested.
+- **Accept:** a `recommendBagChanges(...)` pure module with tests over crafted bags (a hole, an
+  overlap, an inversion); surfaced in the Recommendations panel without over-claiming.
 
-### 5. Real ImportAdapter for a second real format + adapter-driven import
-Wire the import flow to actually use the `ImportAdapter` registry (currently the UI calls the
-shared transform directly). Add one more real launch-monitor CSV preset (e.g. Garmin/Foresight
-header set) behind the adapter interface, with a sample file and detection test.
-- **Accept:** `detect()` auto-selects the new preset on its sample; round-trips to the same
-  canonical schema; no refactor of the pipeline required to add it (that's the whole point).
+### 2. Session/round metadata
+Let users name sessions and tag conditions (indoor/outdoor, wind, temperature, ball). Use tags
+to caveat comparisons (e.g. don't compare an indoor session's carry to outdoor).
+- **Accept:** schema + store changes are backward compatible; `/changes` warns when comparing
+  across differing conditions; tests cover the tagging + comparison gating.
 
-### 6. Replace native confirm() flows with accessible in-page confirmations
-Destructive actions (clear all, reseed, restore replace/merge) currently use `confirm()`.
-Replace with an accessible in-page dialog (focus-trapped, ESC to close, labelled) and a clear
-merge-vs-replace choice for restore.
-- **Accept:** keyboard-only users can complete every destructive flow; no `confirm()`/`alert()`
-  left; lint clean.
+### 3. Component/integration tests
+Add React Testing Library tests for the import flow (upload → map → confirm) and the per-shot
+exclusion toggle, plus optionally a Playwright smoke test of the seeded dashboard.
+- **Accept:** tests run in CI; cover at least the import happy path and an exclusion round-trip.
 
-### 7. Optional: PWA/offline packaging & data portability polish
-Make it installable/offline-first and add an "import a previously exported CSV/JSON" shortcut
-from the dashboard empty state.
+### 4. Stopping-power & total-distance analysis
+Analyze descent angle and total (roll) alongside carry, so wedges/long clubs are judged on how
+they actually stop. Add a per-club "lands soft/hot" read where descent data exists.
+- **Accept:** pure, tested; degrades gracefully without descent data.
+
+### 5. Data safety polish
+Undo for destructive actions (or a trash/restore window), an export reminder, and migration to
+OPFS/larger storage if datasets grow. 
+
+### 6. Display-unit toggle
+A global meters/yards (and m/s) *display* toggle, independent of stored canonical yards/mph.
+- **Accept:** stored data stays canonical; only presentation changes; tested formatter.
 
 ## How to run & verify
 
