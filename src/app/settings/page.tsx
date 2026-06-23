@@ -132,6 +132,38 @@ export default function SettingsPage() {
               }
             />
           </label>
+
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-600">
+              Trend: min sessions
+            </span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              className="input w-28"
+              value={local.trendMinSessions}
+              onChange={(e) =>
+                commit({ trendMinSessions: Math.max(1, Math.round(Number(e.target.value) || 2)) })
+              }
+            />
+          </label>
+
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-600">
+              Trend: deviation (SE)
+            </span>
+            <input
+              type="number"
+              min={0.5}
+              step={0.1}
+              className="input w-28"
+              value={local.trendDeviationSE}
+              onChange={(e) =>
+                commit({ trendDeviationSE: Number(e.target.value) || 1.5 })
+              }
+            />
+          </label>
         </div>
         <p className="text-xs text-slate-500">
           Outlier exclusion never deletes data — excluded shots are only dropped

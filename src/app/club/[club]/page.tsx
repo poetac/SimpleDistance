@@ -10,6 +10,7 @@ import { AdequacyBadge, TrendBadge, fmt } from "@/components/badges";
 import { mean as avg } from "@/lib/stats/descriptive";
 import { clubLabel } from "@/lib/domain/clubs";
 import { usePageTitle } from "@/components/usePageTitle";
+import { classifyExclusions, type ExclusionReason } from "@/lib/exclusion";
 
 export default function ClubDetail() {
   const params = useParams();
@@ -17,7 +18,7 @@ export default function ClubDetail() {
     Array.isArray(params.club) ? params.club[0] : (params.club as string),
   );
   usePageTitle(clubLabel(clubId));
-  const { loading, analysis, settings } = useData();
+  const { loading, analysis, settings, saveShot } = useData();
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
   const club = analysis?.clubs.find((c) => c.club === clubId);
@@ -47,6 +48,8 @@ export default function ClubDetail() {
     .filter((v): v is number => typeof v === "number");
   const avgSide = sideValues.length ? avg(sideValues) : NaN;
   const metricLabel = settings.metric === "carry" ? "carry" : "total";
+  const d = club.dispersion;
+  const exclusions = classifyExclusions(club.shots, settings);
 
   return (
     <div className="space-y-6">
@@ -125,6 +128,23 @@ export default function ClubDetail() {
             No side/offline data available for this club.
           </p>
         )}
+        <div className="mb-3 flex flex-wrap gap-3 text-sm">
+          {d.sideSd != null && (
+            <DispChip label="Side SD" value={`±${fmt(d.sideSd, 1)} yds`} />
+          )}
+          {d.p75AbsSide != null && (
+            <DispChip label="75% within" value={`${fmt(d.p75AbsSide, 1)} yds`} />
+          )}
+          {d.carrySd != null && (
+            <DispChip label="Carry SD" value={`±${fmt(d.carrySd, 1)} yds`} />
+          )}
+          {d.ballSpeedCv != null && (
+            <DispChip
+              label="Strike consistency"
+              value={`${fmt(d.ballSpeedCv, 1)}% ball-speed CV`}
+            />
+          )}
+        </div>
         <DispersionChart shots={club.shots} />
       </section>
 
@@ -166,6 +186,71 @@ export default function ClubDetail() {
           </ul>
         )}
       </section>
+
+      {/* Shots & exclusions */}
+      <section className="card p-4">
+        <h2 className="mb-1 font-semibold">Shots &amp; exclusions</h2>
+        <p className="mb-3 text-sm text-slate-500">
+          Choose which shots feed this club&apos;s stats. “Auto” defers to mishit
+          detection; you can force-include an auto-flagged shot or force-exclude a
+          clean one. Nothing is ever deleted.
+        </p>
+        <div className="max-h-96 overflow-auto">
+          <table className="data">
+            <caption className="sr-only">
+              Every shot for this club with its session, carry, exclusion status,
+              and a control to include or exclude it from statistics.
+            </caption>
+            <thead className="sticky top-0 bg-white">
+              <tr>
+                <th scope="col">Session</th>
+                <th scope="col">Carry</th>
+                <th scope="col">Status</th>
+                <th scope="col">In stats?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exclusions.map((e) => (
+                <tr
+                  key={e.shot.id}
+                  className={e.excluded ? "text-slate-400" : ""}
+                >
+                  <td>{e.shot.sessionId}</td>
+                  <td>{fmt(e.shot.carryYards ?? NaN, 1)}</td>
+                  <td>
+                    <ReasonBadge reason={e.reason} />
+                  </td>
+                  <td>
+                    <select
+                      className="rounded border border-slate-300 px-1 py-0.5 text-xs"
+                      aria-label={`Inclusion for ${clubLabel(e.shot.club)} ${fmt(e.shot.carryYards ?? NaN, 0)} yard shot, session ${e.shot.sessionId}`}
+                      value={
+                        e.shot.excluded === true
+                          ? "exclude"
+                          : e.shot.excluded === false
+                            ? "include"
+                            : "auto"
+                      }
+                      onChange={(ev) => {
+                        const v = ev.target.value;
+                        saveShot({
+                          ...e.shot,
+                          excluded:
+                            v === "exclude" ? true : v === "include" ? false : undefined,
+                        });
+                      }}
+                    >
+                      <option value="auto">Auto</option>
+                      <option value="include">Always include</option>
+                      <option value="exclude">Always exclude</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
@@ -177,4 +262,28 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="mt-1 text-lg font-bold">{value}</div>
     </div>
   );
+}
+
+function DispChip({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="rounded-lg bg-slate-100 px-3 py-1.5">
+      <span className="text-slate-500">{label}: </span>
+      <strong>{value}</strong>
+    </span>
+  );
+}
+
+function ReasonBadge({ reason }: { reason: ExclusionReason }) {
+  switch (reason) {
+    case "auto-outlier":
+      return <span className="badge-warn">Auto-excluded</span>;
+    case "manual-exclude":
+      return <span className="badge-danger">Excluded</span>;
+    case "manual-include":
+      return <span className="badge-ok">Force-included</span>;
+    case "no-metric":
+      return <span className="badge-muted">No {""}data</span>;
+    default:
+      return <span className="badge-ok">Included</span>;
+  }
 }

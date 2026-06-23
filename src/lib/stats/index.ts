@@ -8,3 +8,4 @@ export * from "./adequacy";
 export * from "./gapping";
 export * from "./trend";
 export * from "./equipment";
+export * from "./dispersion";

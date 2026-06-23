@@ -11,18 +11,20 @@ import {
   meanConfidenceInterval,
   shotsNeededForHalfWidth,
   classifyAdequacy,
-  iqrOutliers,
   analyzeGapping,
   classifyTrend,
   equipmentHints,
+  dispersionStats,
   type ConfidenceInterval,
   type AdequacyVerdict,
   type TrendVerdict,
   type EquipmentHint,
   type GapAnalysis,
   type ClubMetricSummary,
+  type DispersionStats,
 } from "./stats";
-import type { ClubSessionStats } from "./stats/trend";
+import type { ClubSessionStats, TrendOptions } from "./stats/trend";
+import { classifyExclusions } from "./exclusion";
 
 export interface ClubAnalysis {
   club: ClubId;
@@ -39,6 +41,7 @@ export interface ClubAnalysis {
   adequacy: AdequacyVerdict;
   trend: TrendVerdict;
   hints: EquipmentHint[];
+  dispersion: DispersionStats;
   sessions: string[];
   shots: Shot[];
 }
@@ -92,16 +95,15 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
   const cleanShotsByClub = new Map<ClubId, Shot[]>();
 
   for (const [club, shots] of byClub) {
-    const withMetric = shots.filter((s) => metricOf(s, settings.metric) != null);
-    const values = withMetric.map((s) => metricOf(s, settings.metric)!);
-
-    let excludedMask: boolean[] = values.map(() => false);
-    if (settings.excludeOutliers) {
-      excludedMask = iqrOutliers(values).mask;
-    }
-    const cleanShots = withMetric.filter((_, i) => !excludedMask[i]);
-    const cleanValues = values.filter((_, i) => !excludedMask[i]);
-    const excludedCount = excludedMask.filter(Boolean).length;
+    // Tri-state per-shot exclusion (manual override > auto outlier detection).
+    const exclusions = classifyExclusions(shots, settings);
+    const cleanEntries = exclusions.filter((e) => !e.excluded && e.value != null);
+    const cleanShots = cleanEntries.map((e) => e.shot);
+    const cleanValues = cleanEntries.map((e) => e.value as number);
+    // Count shots dropped from stats, but not those simply missing the metric.
+    const excludedCount = exclusions.filter(
+      (e) => e.excluded && e.reason !== "no-metric",
+    ).length;
     totalExcluded += excludedCount;
     cleanShotsByClub.set(club, cleanShots);
 
@@ -114,6 +116,15 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       cleanValues.length,
       Number.isFinite(need.additionalNeeded) ? need.additionalNeeded : undefined,
     );
+
+    const numeric = (f: (s: Shot) => number | undefined) =>
+      cleanShots.map(f).filter((v): v is number => typeof v === "number");
+    const dispersion = dispersionStats({
+      side: numeric((s) => s.sideYards),
+      carry: numeric((s) => s.carryYards),
+      ballSpeed: numeric((s) => s.ballSpeedMph),
+      smash: numeric((s) => s.smashFactor),
+    });
 
     clubs.push({
       club,
@@ -131,6 +142,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
         totalNeeded: need.totalNeeded,
       },
       adequacy,
+      dispersion,
       // filled in below
       trend: undefined as unknown as TrendVerdict,
       hints: [],
@@ -155,11 +167,13 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
   }
 
   // Second pass: trend + equipment hints per club.
-  const meanByClub = new Map<ClubId, number>();
-  for (const c of clubs) meanByClub.set(c.club, c.mean);
+  const trendOpts: TrendOptions = {
+    minSessions: settings.trendMinSessions,
+    deviationSE: settings.trendDeviationSE,
+  };
 
   for (const c of clubs) {
-    c.trend = classifyTrend(c.club, perClubSession);
+    c.trend = classifyTrend(c.club, perClubSession, trendOpts);
 
     // Neighbors = nearest present clubs on each side by canonical order.
     const sorted = [...clubs].sort(

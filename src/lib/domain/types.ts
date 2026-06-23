@@ -72,14 +72,21 @@ export type YardageMetric = "carry" | "total";
 export interface AppSettings {
   /** Primary yardage metric (default carry). */
   metric: YardageMetric;
-  /** Whether outlier exclusion is applied in analysis. */
+  /** Whether automatic outlier exclusion is applied in analysis. */
   excludeOutliers: boolean;
   /** Target CI half-width in yards used for the shots-needed estimate. */
   targetCiHalfWidthYards: number;
+  /** Independent sessions a deviation must persist across to be a "real trend". */
+  trendMinSessions: number;
+  /** Per-session deviation size (in standard errors) to count as "strong". */
+  trendDeviationSE: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   metric: "carry",
   excludeOutliers: true,
   targetCiHalfWidthYards: 2,
+  // Defaults mirror the named constants in stats/constants.ts.
+  trendMinSessions: 2,
+  trendDeviationSE: 1.5,
 };

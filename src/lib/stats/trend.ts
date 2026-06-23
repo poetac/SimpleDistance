@@ -85,10 +85,22 @@ function expectedFromNeighbors(
   return null;
 }
 
+/** Tunable thresholds for the trend classifier (default to named constants). */
+export interface TrendOptions {
+  minSessions?: number;
+  deviationSE?: number;
+  minYards?: number;
+}
+
 export function classifyTrend(
   target: ClubId,
   perClubSession: ClubSessionStats[],
+  opts: TrendOptions = {},
 ): TrendVerdict {
+  const minSessions = opts.minSessions ?? TREND_MIN_SESSIONS;
+  const seThreshold = opts.deviationSE ?? TREND_DEVIATION_SE;
+  const minYards = opts.minYards ?? TREND_MIN_YARDS;
+
   // Group by session.
   const bySession = new Map<string, ClubSessionStats[]>();
   for (const cs of perClubSession) {
@@ -117,8 +129,8 @@ export function classifyTrend(
     const deviationYards = expected - observedMean;
     const deviationSE = deviationYards / se;
     const strong =
-      Math.abs(deviationSE) >= TREND_DEVIATION_SE &&
-      Math.abs(deviationYards) >= TREND_MIN_YARDS;
+      Math.abs(deviationSE) >= seThreshold &&
+      Math.abs(deviationYards) >= minYards;
 
     perSession.push({
       sessionId,
@@ -132,13 +144,16 @@ export function classifyTrend(
   }
 
   const sessionsConsidered = perSession.length;
+  // Sample-size-weighted overall deviation: a large, stable session counts more
+  // than a tiny noisy one, so a small off-session can't flip the verdict.
+  const totalN = perSession.reduce((acc, s) => acc + s.n, 0);
   const overallDeviationYards =
-    sessionsConsidered > 0
-      ? mean(perSession.map((s) => s.deviationYards))
+    totalN > 0
+      ? perSession.reduce((acc, s) => acc + s.deviationYards * s.n, 0) / totalN
       : NaN;
 
   const direction: TrendDirection =
-    sessionsConsidered === 0 || Math.abs(overallDeviationYards) < TREND_MIN_YARDS
+    sessionsConsidered === 0 || Math.abs(overallDeviationYards) < minYards
       ? "none"
       : overallDeviationYards > 0
         ? "short"
@@ -154,18 +169,15 @@ export function classifyTrend(
   let classification: TrendClass;
   let message: string;
 
-  if (sessionsConsidered < TREND_MIN_SESSIONS) {
+  if (sessionsConsidered < minSessions) {
     classification = "insufficient";
     const dirWord =
       direction === "none" ? "in line with neighbors" : `${direction} of expectation`;
     message =
       sessionsConsidered === 0
         ? `Not enough neighbor context to assess ${target}.`
-        : `Only ${sessionsConsidered} session with enough shots — ${target} looks ${dirWord}, but a single session can't separate a real trend from noise. Collect another session.`;
-  } else if (
-    sessionsStrongAgreeing >= TREND_MIN_SESSIONS &&
-    direction !== "none"
-  ) {
+        : `Only ${sessionsConsidered} session(s) with enough shots — ${target} looks ${dirWord}, but that can't yet separate a real trend from noise. Collect more sessions.`;
+  } else if (sessionsStrongAgreeing >= minSessions && direction !== "none") {
     classification = "real-trend";
     message = `${target} consistently carries ${Math.abs(overallDeviationYards).toFixed(1)} yds ${direction} of its neighbor-interpolated expectation across ${sessionsStrongAgreeing} of ${sessionsConsidered} sessions — this is a real, persistent trend, not session noise.`;
   } else {

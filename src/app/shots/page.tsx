@@ -217,14 +217,20 @@ export default function ShotsPage() {
                 <th scope="col">Spin</th>
                 <th scope="col">Side</th>
                 <th scope="col">Src</th>
+                <th scope="col">Stats</th>
                 <th scope="col">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50">
+              {sorted.map((s) => {
+                const manuallyExcluded = s.excluded === true;
+                return (
+                <tr
+                  key={s.id}
+                  className={`hover:bg-slate-50 ${manuallyExcluded ? "text-slate-400 line-through" : ""}`}
+                >
                   <td className="font-medium">{clubLabel(s.club)}</td>
                   <td className="text-slate-500">{s.sessionId}</td>
                   <td>{fmt(s.carryYards ?? NaN, 1)}</td>
@@ -233,6 +239,19 @@ export default function ShotsPage() {
                   <td>{s.spinRpm ?? "—"}</td>
                   <td>{fmt(s.sideYards ?? NaN, 1)}</td>
                   <td className="text-xs text-slate-500">{s.source}</td>
+                  <td>
+                    <label className="flex items-center gap-1 text-xs text-slate-500 no-underline">
+                      <input
+                        type="checkbox"
+                        checked={!manuallyExcluded}
+                        aria-label={`Include ${clubLabel(s.club)} ${fmt(s.carryYards ?? NaN, 0)} yard shot in statistics`}
+                        onChange={(e) =>
+                          saveShot({ ...s, excluded: e.target.checked ? undefined : true })
+                        }
+                      />
+                      in
+                    </label>
+                  </td>
                   <td className="whitespace-nowrap">
                     <button
                       className="text-xs text-fairway-700 hover:underline"
@@ -250,10 +269,11 @@ export default function ShotsPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {!loading && sorted.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-6 text-center text-slate-500">
+                  <td colSpan={10} className="py-6 text-center text-slate-500">
                     No shots yet.
                   </td>
                 </tr>
