@@ -105,6 +105,41 @@ export default function Dashboard() {
         <GappingChart clubs={analysis.clubs} gapping={analysis.gapping} />
       </section>
 
+      <section className="card p-4">
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <h2 className="font-semibold">Bag structure</h2>
+          {Number.isFinite(analysis.bagAdvice.typicalGapYards) && (
+            <span className="text-sm text-slate-500">
+              Typical gap ~{fmt(analysis.bagAdvice.typicalGapYards, 0)} yds
+            </span>
+          )}
+        </div>
+        {analysis.bagAdvice.items.length === 0 ? (
+          <p className="text-sm text-slate-600">
+            Your scoring clubs are evenly spaced — no holes, overlaps, or
+            inversions detected.
+          </p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {analysis.bagAdvice.items.map((item, i) => (
+              <li
+                key={i}
+                className={`rounded-md border-l-4 bg-slate-50 px-3 py-2 ${
+                  item.kind === "inversion"
+                    ? "border-l-rose-500"
+                    : item.kind === "hole"
+                      ? "border-l-amber-500"
+                      : "border-l-amber-400"
+                }`}
+              >
+                <span className="mr-2 font-semibold capitalize">{item.kind}:</span>
+                {item.text}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <section className="card overflow-x-auto">
         <table className="data">
           <caption className="sr-only">

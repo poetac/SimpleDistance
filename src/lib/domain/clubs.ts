@@ -72,6 +72,19 @@ export function clubLabel(club: ClubId): string {
   return club;
 }
 
+export type ClubCategory = "driver" | "wood" | "hybrid" | "iron" | "wedge";
+
+/** Coarse category for a canonical club id, used to scope gapping advice. */
+export function categoryOf(club: ClubId): ClubCategory {
+  if (club === "DR") return "driver";
+  if (/^\dW$/.test(club)) return "wood";
+  if (/^\dH$/.test(club)) return "hybrid";
+  if (/^\dI$/.test(club)) return "iron";
+  if (/^\d{2}$/.test(club)) return "wedge";
+  if (["PW", "AW", "GW", "SW", "LW"].includes(club)) return "wedge";
+  return "iron";
+}
+
 const WORD_NUMBERS: Record<string, string> = {
   one: "1",
   two: "2",

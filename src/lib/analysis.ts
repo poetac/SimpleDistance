@@ -25,6 +25,8 @@ import {
 } from "./stats";
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
+import { adviseBag, type BagAdvice } from "./bagAdvice";
+import { categoryOf } from "./domain/clubs";
 
 export interface ClubAnalysis {
   club: ClubId;
@@ -56,6 +58,7 @@ export interface Recommendation {
 export interface BagAnalysis {
   clubs: ClubAnalysis[];
   gapping: GapAnalysis;
+  bagAdvice: BagAdvice;
   recommendations: Recommendation[];
   totalShots: number;
   totalExcluded: number;
@@ -198,19 +201,28 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
   }
 
   // Gapping across the bag (only clubs with a usable mean).
+  const usableClubs = clubs.filter((c) => Number.isFinite(c.mean));
   const gapping = analyzeGapping(
-    clubs
-      .filter((c) => Number.isFinite(c.mean))
-      .map((c) => ({ club: c.club, carry: c.mean })),
+    usableClubs.map((c) => ({ club: c.club, carry: c.mean })),
   );
 
-  const recommendations = buildRecommendations(clubs, gapping);
+  // Prescriptive bag advice (typical gap, holes/overlaps with target carries).
+  const bagAdvice = adviseBag(
+    usableClubs.map((c) => ({
+      club: c.club,
+      carry: c.mean,
+      category: categoryOf(c.club),
+    })),
+  );
+
+  const recommendations = buildRecommendations(clubs, bagAdvice);
 
   return {
     clubs: clubs.sort(
       (a, b) => clubOrderIndex(a.club) - clubOrderIndex(b.club),
     ),
     gapping,
+    bagAdvice,
     recommendations,
     totalShots: allShots.length,
     totalExcluded,
@@ -220,32 +232,40 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
 
 function buildRecommendations(
   clubs: ClubAnalysis[],
-  gapping: GapAnalysis,
+  advice: BagAdvice,
 ): Recommendation[] {
   const recs: Recommendation[] = [];
   const byClub = new Map(clubs.map((c) => [c.club, c]));
+  const inversionClubs = new Set<ClubId>();
 
-  // 1. Inversions — most actionable structural problem.
-  for (const inv of gapping.inversions) {
-    const longer = byClub.get(inv.longer);
-    const realTrend = longer?.trend.classification === "real-trend";
-    const hintText = longer?.hints[0]?.hypothesis;
-    recs.push({
-      priority: realTrend ? 1 : 2,
-      club: inv.longer,
-      category: "inversion",
-      text:
-        `${clubLabelSafe(inv.longer)} is carrying ${inv.deficit.toFixed(0)} yds SHORTER than your ${clubLabelSafe(inv.shorter)} — an inversion. ` +
-        (realTrend
-          ? `This is a persistent trend across sessions. ${hintText ? hintText : "Get its loft/lie checked."}`
-          : `Confirm with more shots before acting; it may still be noise.`),
-    });
+  // 1-2 & 4 & 6. Structural advice from the bag engine (inversions, holes, overlaps).
+  for (const item of advice.items) {
+    if (item.kind === "inversion") {
+      const longerClub = item.clubs[0];
+      inversionClubs.add(longerClub);
+      const longer = byClub.get(longerClub);
+      const realTrend = longer?.trend.classification === "real-trend";
+      const hintText = longer?.hints[0]?.hypothesis;
+      recs.push({
+        priority: realTrend ? 1 : 2,
+        club: longerClub,
+        category: "inversion",
+        text:
+          item.text +
+          (realTrend
+            ? ` This is a persistent trend across sessions${hintText ? ` — ${hintText}` : "."}`
+            : ""),
+      });
+    } else if (item.kind === "hole") {
+      recs.push({ priority: 4, club: item.clubs[0], category: "hole", text: item.text });
+    } else {
+      recs.push({ priority: 6, club: item.clubs[0], category: "overlap", text: item.text });
+    }
   }
 
-  // 2. Real trends not already covered by an inversion.
-  const invClubs = new Set(gapping.inversions.map((i) => i.longer));
+  // 3. Real trends not already covered by an inversion.
   for (const c of clubs) {
-    if (c.trend.classification === "real-trend" && !invClubs.has(c.club)) {
+    if (c.trend.classification === "real-trend" && !inversionClubs.has(c.club)) {
       const hint = c.hints[0];
       recs.push({
         priority: 3,
@@ -258,7 +278,7 @@ function buildRecommendations(
     }
   }
 
-  // 3. Insufficient sample sizes on otherwise interesting clubs.
+  // 5. Insufficient sample sizes on otherwise interesting clubs.
   for (const c of clubs) {
     if (c.adequacy.level === "insufficient") {
       recs.push({
@@ -270,27 +290,5 @@ function buildRecommendations(
     }
   }
 
-  // 4. Holes in the bag.
-  for (const hole of gapping.holes) {
-    recs.push({
-      priority: 4,
-      category: "hole",
-      text: `Large ${hole.gap.toFixed(0)}-yd gap between ${clubLabelSafe(hole.a)} and ${clubLabelSafe(hole.b)} — a hole in your bag. Consider a club or loft change to fill it.`,
-    });
-  }
-
-  // 5. Overlaps.
-  for (const ov of gapping.overlaps) {
-    recs.push({
-      priority: 6,
-      category: "overlap",
-      text: `${clubLabelSafe(ov.a)} and ${clubLabelSafe(ov.b)} carry within ${ov.gap.toFixed(0)} yds — they overlap. One may be redundant.`,
-    });
-  }
-
   return recs.sort((a, b) => a.priority - b.priority);
-}
-
-function clubLabelSafe(club: ClubId): string {
-  return clubLabel(club);
 }
