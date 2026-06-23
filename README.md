@@ -52,6 +52,8 @@ the import flow, use the ready-made files in [`/samples`](./samples):
 - `samples/trackman-sample.csv` — TrackMan-style, **yards + mph**, full launch data.
 - `samples/inrange-sample.csv` — Inrange-style, **meters + m/s**, fewer columns and
   different club labels (to demonstrate auto-detection, presets, and unit conversion).
+- `samples/garmin-sample.csv` — Garmin Approach R10-style, **yards + mph**, with
+  vendor-specific signature columns (Spin Axis / Roll Distance) the registry fingerprints.
 
 Go to **Import → choose a sample → confirm**. Both reproduce the identical insight because
 units are normalized on import.
@@ -134,9 +136,13 @@ yards/meters-aware; **speed** auto-detects mph vs m/s vs km/h by header and magn
 **distance** units rely on the header/preset (magnitude alone can't tell a driver-in-meters
 from a mid-iron-in-yards) and are always user-confirmable in the import UI.
 
-Presets for **TrackMan** and **Inrange** live in
+Presets for **TrackMan**, **Inrange**, and **Garmin** live in
 [`src/lib/import/presets.ts`](./src/lib/import/presets.ts). They are *hints*, not hardcoded
-column positions — auto-detection always runs and you can override anything.
+column positions — auto-detection always runs and you can override anything. Detection and
+parsing both route through the **`ImportAdapter` registry**: on upload, `detectFileAdapter`
+fingerprints the file to a preset adapter (using vendor signature headers) or falls back to a
+generic CSV adapter; on confirm, the chosen adapter parses the table with your confirmed
+mapping/units. Adding a source is just registering another adapter — the flow doesn't change.
 
 ---
 

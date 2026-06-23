@@ -18,6 +18,11 @@ export interface AdapterContext {
   aliases?: Record<string, string>;
   /** Session id to assign when the source has none. */
   fallbackSessionId?: string;
+  /** User-confirmed column mapping (overrides the adapter's auto-mapping). */
+  mappingOverride?: Partial<Record<CanonicalField, string>>;
+  /** User-confirmed unit overrides. */
+  distanceUnit?: "yards" | "meters";
+  speedUnit?: "mph" | "ms" | "kmh";
 }
 
 export interface ImportResult {

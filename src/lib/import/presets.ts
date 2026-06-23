@@ -16,6 +16,11 @@ export interface ImportPreset {
   speedUnit: "mph" | "ms" | "kmh";
   /** canonicalField -> list of candidate source header names. */
   headers: Partial<Record<CanonicalField, string[]>>;
+  /**
+   * Vendor-specific "fingerprint" headers that strongly identify this source.
+   * Weighted heavily in detection so look-alike presets don't win on overlap.
+   */
+  signature?: string[];
 }
 
 export const PRESETS: ImportPreset[] = [
@@ -41,6 +46,29 @@ export const PRESETS: ImportPreset[] = [
       descentAngleDeg: ["Landing Angle", "Descent Angle"],
       timestamp: ["Date", "Time", "Date/Time"],
       sessionId: ["Session", "Session Name"],
+    },
+  },
+  {
+    id: "garmin",
+    label: "Garmin",
+    description:
+      "Garmin Approach R10 / Garmin Golf CSV exports. Yards & mph; rich spin data.",
+    distanceUnit: "yards",
+    speedUnit: "mph",
+    signature: ["Spin Axis", "Roll Distance"],
+    headers: {
+      club: ["Club Name", "Club Type", "Club"],
+      carryYards: ["Carry Distance", "Carry"],
+      totalYards: ["Total Distance", "Total"],
+      ballSpeedMph: ["Ball Speed"],
+      clubSpeedMph: ["Club Head Speed", "Club Speed"],
+      smashFactor: ["Smash Factor"],
+      launchAngleDeg: ["Launch Angle"],
+      launchDirectionDeg: ["Launch Direction"],
+      spinRpm: ["Spin Rate", "Back Spin", "Backspin"],
+      apexFt: ["Apex Height", "Height"],
+      descentAngleDeg: ["Descent Angle", "Land Angle"],
+      timestamp: ["Date"],
     },
   },
   {

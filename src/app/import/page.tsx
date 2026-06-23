@@ -4,11 +4,14 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useData } from "@/components/DataProvider";
 import { parseCsvFile, columnValues } from "@/lib/import/csv";
-import type { RawTable } from "@/lib/import/adapter";
-import { autoDetectMapping, detectPreset, type ColumnMapping } from "@/lib/import/mapping";
+import { getAdapter, type RawTable } from "@/lib/import/adapter";
+import { autoDetectMapping, type ColumnMapping } from "@/lib/import/mapping";
+import {
+  detectFileAdapter,
+  presetIdForAdapter,
+} from "@/lib/import/builtinAdapters";
 import { CANONICAL_FIELDS, REQUIRED_FIELDS, type CanonicalField } from "@/lib/import/schema";
 import { PRESETS } from "@/lib/import/presets";
-import { rowsToShots } from "@/lib/import/transform";
 import { detectDistanceUnit, detectSpeedUnit } from "@/lib/import/units";
 import { getAliasMap, addImport } from "@/lib/db";
 import { usePageTitle } from "@/components/usePageTitle";
@@ -42,7 +45,9 @@ export default function ImportPage() {
       setTable(parsed);
       setFileName(file.name);
 
-      const detectedPreset = detectPreset(parsed.headers) ?? "";
+      // Route detection through the ImportAdapter registry.
+      const adapter = detectFileAdapter(parsed);
+      const detectedPreset = presetIdForAdapter(adapter);
       setPresetId(detectedPreset);
       const { mapping: autoMap, preset } = autoDetectMapping(
         parsed.headers,
@@ -88,13 +93,17 @@ export default function ImportPage() {
     if (!table) return;
     const aliases = await getAliasMap();
     const source = presetId || "csv";
-    const res = rowsToShots(table, mapping, {
-      distanceUnit,
-      speedUnit,
-      source,
+    // Parse through the selected ImportAdapter, passing the user's confirmed
+    // mapping/units as overrides.
+    const adapter = getAdapter(`${source}-csv`) ?? getAdapter("csv")!;
+    const res = adapter.parse(table, {
       aliases,
       fallbackSessionId: `${source}-${fileName.replace(/\.csv$/i, "")}`,
+      mappingOverride: mapping,
+      distanceUnit,
+      speedUnit,
     });
+    const skipped = table.rows.length - res.shots.length;
     if (res.shots.length > 0) {
       await addShots(res.shots);
       await addImport({
@@ -103,11 +112,11 @@ export default function ImportPage() {
         fileName,
         importedAt: new Date().toISOString(),
         shotCount: res.shots.length,
-        mapping: mapping as Record<string, string>,
+        mapping: res.mapping as Record<string, string>,
       });
     }
     await reload();
-    setResult({ added: res.shots.length, warnings: res.warnings, skipped: res.rowsSkipped });
+    setResult({ added: res.shots.length, warnings: res.warnings, skipped });
     setStep("done");
   }
 

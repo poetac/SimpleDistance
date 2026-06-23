@@ -17,17 +17,23 @@ export function normHeader(h: string): string {
  */
 export function detectPreset(headers: string[]): string | undefined {
   const normSet = new Set(headers.map(normHeader));
-  let best: { id: string; score: number } | undefined;
+  let best: { id: string; fieldScore: number; score: number } | undefined;
   for (const preset of PRESETS) {
-    let score = 0;
+    let fieldScore = 0;
     for (const candidates of Object.values(preset.headers)) {
       if ((candidates as string[]).some((c) => normSet.has(normHeader(c)))) {
-        score++;
+        fieldScore++;
       }
     }
-    if (!best || score > best.score) best = { id: preset.id, score };
+    // Vendor fingerprint headers count heavily so look-alikes don't win on overlap.
+    const sigScore = (preset.signature ?? []).filter((h) =>
+      normSet.has(normHeader(h)),
+    ).length;
+    const score = fieldScore + 3 * sigScore;
+    if (!best || score > best.score) best = { id: preset.id, fieldScore, score };
   }
-  return best && best.score >= 2 ? best.id : undefined;
+  // Require at least two real field matches to claim a preset.
+  return best && best.fieldScore >= 2 ? best.id : undefined;
 }
 
 /**

@@ -84,7 +84,66 @@ const inRows = shots.map((s) => [
 ]);
 writeFileSync(join(outDir, "inrange-sample.csv"), csv([inHeader, ...inRows]));
 
+// --- Garmin Approach R10-style (yards, mph, full names + spin axis signature) ---
+const garminName: Record<string, string> = {
+  DR: "Driver",
+  "3W": "3 Wood",
+  "4I": "4 Iron",
+  "5I": "5 Iron",
+  "6I": "6 Iron",
+  "7I": "7 Iron",
+  "8I": "8 Iron",
+  "9I": "9 Iron",
+  PW: "Pitching Wedge",
+  "52": "Gap Wedge",
+  "56": "Sand Wedge",
+  "60": "Lob Wedge",
+};
+const garminType: Record<string, string> = {
+  DR: "Driver",
+  "3W": "Wood",
+};
+const gHeader = [
+  "Date",
+  "Club Name",
+  "Club Type",
+  "Ball Speed",
+  "Club Head Speed",
+  "Smash Factor",
+  "Carry Distance",
+  "Total Distance",
+  "Roll Distance",
+  "Launch Angle",
+  "Launch Direction",
+  "Spin Rate",
+  "Spin Axis",
+  "Apex Height",
+  "Descent Angle",
+];
+const gRows = shots.map((s) => {
+  const carry = s.carryYards ?? 0;
+  const total = s.totalYards ?? carry;
+  return [
+    s.timestamp ?? "",
+    garminName[s.club] ?? s.club,
+    garminType[s.club] ?? (/^\d{2}$/.test(s.club) ? "Wedge" : "Iron"),
+    r1(s.ballSpeedMph),
+    r1(s.clubSpeedMph),
+    s.smashFactor != null ? s.smashFactor.toFixed(2) : "",
+    r1(carry),
+    r1(total),
+    r1(total - carry),
+    r1(s.launchAngleDeg),
+    r1(s.launchDirectionDeg),
+    s.spinRpm != null ? String(s.spinRpm) : "",
+    r1((s.launchDirectionDeg ?? 0) * -1.5), // spin axis proxy
+    s.apexFt != null ? String(s.apexFt) : "",
+    r1(s.descentAngleDeg),
+  ];
+});
+writeFileSync(join(outDir, "garmin-sample.csv"), csv([gHeader, ...gRows]));
+
 // eslint-disable-next-line no-console
 console.log(
-  `Wrote ${tmRows.length} TrackMan rows and ${inRows.length} Inrange rows to /samples`,
+  `Wrote ${tmRows.length} TrackMan, ${inRows.length} Inrange, ${gRows.length} Garmin rows to /samples`,
 );
