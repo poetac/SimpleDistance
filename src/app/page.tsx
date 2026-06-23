@@ -1,13 +1,29 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useData } from "@/components/DataProvider";
 import { GappingChart } from "@/components/charts/GappingChart";
 import { AdequacyBadge, FlagBadge, TrendBadge, fmt } from "@/components/badges";
 import { Recommendations } from "@/components/Recommendations";
+import { analyzeBag } from "@/lib/analysis";
 
 export default function Dashboard() {
-  const { loading, analysis, settings } = useData();
+  const { loading, analysis: fullAnalysis, settings, shots } = useData();
+  const [session, setSession] = useState("");
+
+  const sessions = useMemo(
+    () => [...new Set(shots.map((s) => s.sessionId))].sort(),
+    [shots],
+  );
+
+  const analysis = useMemo(() => {
+    if (!session) return fullAnalysis;
+    return analyzeBag(
+      shots.filter((s) => s.sessionId === session),
+      settings,
+    );
+  }, [session, shots, settings, fullAnalysis]);
 
   if (loading)
     return <p className="text-slate-500">Loading your bag…</p>;
@@ -44,10 +60,37 @@ export default function Dashboard() {
             {metricLabel} distance · {settings.targetCiHalfWidthYards}-yd target CI
           </p>
         </div>
-        <Link href="/import" className="btn-primary">
-          Import data
-        </Link>
+        <div className="flex items-center gap-2">
+          {sessions.length > 1 && (
+            <select
+              className="rounded-lg border border-slate-300 px-2 py-2 text-sm"
+              value={session}
+              onChange={(e) => setSession(e.target.value)}
+            >
+              <option value="">All sessions</option>
+              {sessions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          )}
+          <Link href="/import" className="btn-primary">
+            Import data
+          </Link>
+        </div>
       </div>
+
+      {session && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          Viewing a single session ({session}). Real-trend-vs-noise needs multiple
+          sessions, so trend verdicts show as “insufficient” here — switch to{" "}
+          <button className="underline" onClick={() => setSession("")}>
+            All sessions
+          </button>{" "}
+          for the full analysis.
+        </p>
+      )}
 
       <Recommendations recs={analysis.recommendations} />
 

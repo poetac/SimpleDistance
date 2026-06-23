@@ -19,10 +19,34 @@ const EMPTY = {
 };
 
 export default function ShotsPage() {
-  const { loading, shots, addShots, removeShot, aliases } = useData();
+  const { loading, shots, addShots, saveShot, removeShot, aliases } = useData();
   const [form, setForm] = useState({ ...EMPTY });
+  const [editing, setEditing] = useState<Shot | null>(null);
   const [filter, setFilter] = useState("");
   const [msg, setMsg] = useState("");
+
+  function startEdit(s: Shot) {
+    setEditing(s);
+    setForm({
+      club: s.rawClub ?? s.club,
+      sessionId: s.sessionId,
+      carryYards: s.carryYards?.toString() ?? "",
+      totalYards: s.totalYards?.toString() ?? "",
+      ballSpeedMph: s.ballSpeedMph?.toString() ?? "",
+      clubSpeedMph: s.clubSpeedMph?.toString() ?? "",
+      spinRpm: s.spinRpm?.toString() ?? "",
+      launchAngleDeg: s.launchAngleDeg?.toString() ?? "",
+      sideYards: s.sideYards?.toString() ?? "",
+    });
+    setMsg("");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setForm({ ...EMPTY });
+    setMsg("");
+  }
 
   const aliasMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -46,11 +70,11 @@ export default function ShotsPage() {
       return;
     }
     const shot: Shot = {
-      id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: editing?.id ?? `manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       club: normalizedClub,
       rawClub: form.club,
       sessionId: form.sessionId.trim() || `manual-${new Date().toISOString().slice(0, 10)}`,
-      timestamp: new Date().toISOString(),
+      timestamp: editing?.timestamp ?? new Date().toISOString(),
       carryYards: carry,
       totalYards: total,
       ballSpeedMph: num(form.ballSpeedMph),
@@ -58,11 +82,23 @@ export default function ShotsPage() {
       spinRpm: num(form.spinRpm),
       launchAngleDeg: num(form.launchAngleDeg),
       sideYards: num(form.sideYards),
-      source: "manual",
+      // preserve fields not exposed in the form when editing
+      launchDirectionDeg: editing?.launchDirectionDeg,
+      apexFt: editing?.apexFt,
+      descentAngleDeg: editing?.descentAngleDeg,
+      smashFactor: editing?.smashFactor,
+      source: editing?.source ?? "manual",
     };
-    await addShots([shot]);
-    setForm((f) => ({ ...EMPTY, club: f.club, sessionId: f.sessionId }));
-    setMsg(`Added ${clubLabel(normalizedClub)} shot.`);
+    if (editing) {
+      await saveShot(shot);
+      setEditing(null);
+      setForm({ ...EMPTY });
+      setMsg(`Updated ${clubLabel(normalizedClub)} shot.`);
+    } else {
+      await addShots([shot]);
+      setForm((f) => ({ ...EMPTY, club: f.club, sessionId: f.sessionId }));
+      setMsg(`Added ${clubLabel(normalizedClub)} shot.`);
+    }
   }
 
   const sorted = useMemo(() => {
@@ -89,8 +125,10 @@ export default function ShotsPage() {
       <h1 className="text-2xl font-bold tracking-tight">Shots</h1>
 
       {/* Manual entry */}
-      <section className="card p-4">
-        <h2 className="mb-3 font-semibold">Add a shot manually</h2>
+      <section className={`card p-4 ${editing ? "ring-2 ring-fairway-400" : ""}`}>
+        <h2 className="mb-3 font-semibold">
+          {editing ? "Edit shot" : "Add a shot manually"}
+        </h2>
         <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
           <Field label="Club *" hint={normalizedClub ? `→ ${normalizedClub}` : "e.g. 7i, PW, 56"}>
             <input
@@ -126,10 +164,15 @@ export default function ShotsPage() {
           <Field label="Side (yds, + right)">
             <input className="input" value={form.sideYards} onChange={(e) => setForm({ ...form, sideYards: e.target.value })} inputMode="decimal" />
           </Field>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <button className="btn-primary w-full" type="submit">
-              Add shot
+              {editing ? "Save changes" : "Add shot"}
             </button>
+            {editing && (
+              <button type="button" className="btn-ghost" onClick={cancelEdit}>
+                Cancel
+              </button>
+            )}
           </div>
         </form>
         {msg && <p className="mt-2 text-sm text-slate-500">{msg}</p>}
@@ -180,9 +223,15 @@ export default function ShotsPage() {
                   <td>{s.spinRpm ?? "—"}</td>
                   <td>{fmt(s.sideYards ?? NaN, 1)}</td>
                   <td className="text-xs text-slate-400">{s.source}</td>
-                  <td>
+                  <td className="whitespace-nowrap">
                     <button
-                      className="text-xs text-rose-500 hover:underline"
+                      className="text-xs text-fairway-600 hover:underline"
+                      onClick={() => startEdit(s)}
+                    >
+                      edit
+                    </button>
+                    <button
+                      className="ml-2 text-xs text-rose-500 hover:underline"
                       onClick={() => removeShot(s.id)}
                     >
                       delete

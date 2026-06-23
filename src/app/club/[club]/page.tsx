@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useData } from "@/components/DataProvider";
 import { DistributionChart } from "@/components/charts/DistributionChart";
 import { SessionTrendChart } from "@/components/charts/SessionTrendChart";
+import { DispersionChart } from "@/components/charts/DispersionChart";
 import { AdequacyBadge, TrendBadge, fmt } from "@/components/badges";
 import { mean as avg } from "@/lib/stats/descriptive";
 
@@ -98,18 +99,19 @@ export default function ClubDetail() {
 
       {/* Dispersion */}
       <section className="card p-4">
-        <h2 className="mb-1 font-semibold">Dispersion</h2>
+        <h2 className="mb-1 font-semibold">Dispersion (shot pattern)</h2>
         {Number.isFinite(avgSide) ? (
-          <p className="text-sm text-slate-600">
+          <p className="mb-3 text-sm text-slate-600">
             Average side: <strong>{fmt(Math.abs(avgSide), 1)} yds</strong>{" "}
             {avgSide >= 0 ? "right" : "left"} of target across {sideValues.length}{" "}
             shots with side data.
           </p>
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="mb-3 text-sm text-slate-500">
             No side/offline data available for this club.
           </p>
         )}
+        <DispersionChart shots={club.shots} />
       </section>
 
       {/* Equipment hints */}

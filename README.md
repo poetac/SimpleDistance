@@ -33,6 +33,8 @@ npm run typecheck # tsc --noEmit
 npx tsx scripts/gen-samples.ts   # regenerate /samples from the seed dataset
 ```
 
+CI (`.github/workflows/ci.yml`) runs `typecheck`, `test`, and `build` on every push and PR.
+
 ### Try it immediately
 
 The app auto-seeds the 5-iron demo, so the dashboard is useful on first load. To exercise
@@ -44,6 +46,16 @@ the import flow, use the ready-made files in [`/samples`](./samples):
 
 Go to **Import → choose a sample → confirm**. Both reproduce the identical insight because
 units are normalized on import.
+
+### Other things you can do
+
+- **Dashboard:** filter the whole analysis to a single **session** vs. all sessions.
+- **Shots page:** add, **edit**, and delete individual shots; filter the list by club.
+- **Club detail:** carry distribution, session-over-session trend, a **dispersion
+  scatter** (side vs. carry), and hedged equipment-vs-swing hints.
+- **Settings → Data:** **export a JSON backup** or a **CSV** of your shots, and **restore**
+  a backup (merge or replace). Because storage is per-browser, this is how you keep or move
+  your data. The exported CSV re-imports cleanly through the generic mapper.
 
 ---
 

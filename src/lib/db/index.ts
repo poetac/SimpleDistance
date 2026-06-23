@@ -141,6 +141,54 @@ export async function addImport(rec: ImportRecord): Promise<void> {
   await db.put("imports", rec);
 }
 
+// --- Backup / restore (browser-only storage means the user owns the data) ---
+export interface BackupBundle {
+  version: 1;
+  exportedAt: string;
+  shots: Shot[];
+  aliases: ClubAlias[];
+  settings: AppSettings;
+}
+
+export async function exportBundle(): Promise<BackupBundle> {
+  const [shots, aliases, settings] = await Promise.all([
+    getAllShots(),
+    getAliases(),
+    getSettings(),
+  ]);
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    shots,
+    aliases,
+    settings,
+  };
+}
+
+/**
+ * Restore a backup. `mode: "replace"` clears existing shots first; `mode:
+ * "merge"` keeps them (shots with duplicate ids are overwritten).
+ */
+export async function importBundle(
+  bundle: BackupBundle,
+  mode: "merge" | "replace" = "merge",
+): Promise<{ shots: number }> {
+  if (!bundle || bundle.version !== 1 || !Array.isArray(bundle.shots)) {
+    throw new Error("Unrecognized backup file.");
+  }
+  const db = await getDb();
+  if (mode === "replace") {
+    await db.clear("shots");
+  }
+  const tx = db.transaction("shots", "readwrite");
+  await Promise.all(bundle.shots.map((s) => tx.store.put(s)));
+  await tx.done;
+  for (const a of bundle.aliases ?? []) await putAlias(a);
+  if (bundle.settings) await saveSettings(bundle.settings);
+  await db.put("meta", true, "seeded");
+  return { shots: bundle.shots.length };
+}
+
 // --- Settings ---
 export async function getSettings(): Promise<AppSettings> {
   const db = await getDb();

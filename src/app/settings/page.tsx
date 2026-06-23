@@ -5,8 +5,10 @@ import { useData } from "@/components/DataProvider";
 import { normalizeClub, clubLabel } from "@/lib/domain/clubs";
 import { CANONICAL_CLUB_ORDER } from "@/lib/domain/clubs";
 import type { AppSettings } from "@/lib/domain/types";
-import { getImports } from "@/lib/db";
+import { getImports, exportBundle } from "@/lib/db";
 import type { ImportRecord } from "@/lib/domain/types";
+import { shotsToCsv } from "@/lib/export";
+import { downloadFile, readFileAsText } from "@/lib/download";
 
 export default function SettingsPage() {
   const {
@@ -17,6 +19,7 @@ export default function SettingsPage() {
     removeAlias,
     reseed,
     clearAll,
+    restore,
     shots,
   } = useData();
 
@@ -24,6 +27,41 @@ export default function SettingsPage() {
   const [aliasRaw, setAliasRaw] = useState("");
   const [aliasClub, setAliasClub] = useState("");
   const [imports, setImports] = useState<ImportRecord[]>([]);
+  const [restoreMsg, setRestoreMsg] = useState("");
+
+  async function exportJson() {
+    const bundle = await exportBundle();
+    downloadFile(
+      `simpledistance-backup-${new Date().toISOString().slice(0, 10)}.json`,
+      JSON.stringify(bundle, null, 2),
+      "application/json",
+    );
+  }
+
+  function exportCsv() {
+    downloadFile(
+      `simpledistance-shots-${new Date().toISOString().slice(0, 10)}.csv`,
+      shotsToCsv(shots),
+      "text/csv",
+    );
+  }
+
+  async function handleRestore(file: File) {
+    setRestoreMsg("");
+    try {
+      const text = await readFileAsText(file);
+      const bundle = JSON.parse(text);
+      const mode = confirm(
+        "Replace all current shots with the backup?\n\nOK = replace, Cancel = merge into existing.",
+      )
+        ? "replace"
+        : "merge";
+      const n = await restore(bundle, mode);
+      setRestoreMsg(`Restored ${n} shots (${mode}).`);
+    } catch (e) {
+      setRestoreMsg(e instanceof Error ? e.message : "Could not read that backup.");
+    }
+  }
 
   useEffect(() => setLocal(settings), [settings]);
   useEffect(() => {
@@ -207,8 +245,31 @@ export default function SettingsPage() {
 
       {/* Data management */}
       <section className="card p-4">
-        <h2 className="mb-3 font-semibold">Data</h2>
+        <h2 className="mb-1 font-semibold">Data</h2>
+        <p className="mb-3 text-sm text-slate-500">
+          Your shots live only in this browser. Export a backup to keep or move
+          them.
+        </p>
         <div className="flex flex-wrap gap-3">
+          <button className="btn-ghost" onClick={exportJson} disabled={shots.length === 0}>
+            Export backup (JSON)
+          </button>
+          <button className="btn-ghost" onClick={exportCsv} disabled={shots.length === 0}>
+            Export shots (CSV)
+          </button>
+          <label className="btn-ghost cursor-pointer">
+            Restore backup…
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleRestore(f);
+                e.target.value = "";
+              }}
+            />
+          </label>
           <button
             className="btn-ghost"
             onClick={() => {
@@ -228,6 +289,7 @@ export default function SettingsPage() {
             Clear all data
           </button>
         </div>
+        {restoreMsg && <p className="mt-2 text-sm text-slate-500">{restoreMsg}</p>}
       </section>
     </div>
   );

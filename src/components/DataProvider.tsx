@@ -32,6 +32,7 @@ interface DataContextValue {
   removeAlias: (raw: string) => Promise<void>;
   reseed: () => Promise<void>;
   clearAll: () => Promise<void>;
+  restore: (bundle: db.BackupBundle, mode: "merge" | "replace") => Promise<number>;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -111,6 +112,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     clearAll: async () => {
       await db.clearAllShots();
       await reload();
+    },
+    restore: async (bundle, mode) => {
+      const res = await db.importBundle(bundle, mode);
+      await reload();
+      return res.shots;
     },
   };
 
