@@ -53,3 +53,10 @@ export const SPIN_ANOMALY_PCT = 0.15;
 /** Unit detection: a max plausible carry in yards for a full shot. Above this,
  *  values are assumed to be a different unit or a bad row. */
 export const MAX_PLAUSIBLE_CARRY_YARDS = 400;
+
+/**
+ * Stopping power (irons/wedges only). Roll as a fraction of total distance:
+ * below SOFT it stops quickly, above HOT it releases a lot.
+ */
+export const SOFT_ROLL_FRACTION = 0.06;
+export const HOT_ROLL_FRACTION = 0.14;

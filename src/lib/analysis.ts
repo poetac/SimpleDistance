@@ -15,6 +15,7 @@ import {
   classifyTrend,
   equipmentHints,
   dispersionStats,
+  stoppingStats,
   type ConfidenceInterval,
   type AdequacyVerdict,
   type TrendVerdict,
@@ -22,6 +23,7 @@ import {
   type GapAnalysis,
   type ClubMetricSummary,
   type DispersionStats,
+  type StoppingStats,
 } from "./stats";
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
@@ -44,6 +46,7 @@ export interface ClubAnalysis {
   trend: TrendVerdict;
   hints: EquipmentHint[];
   dispersion: DispersionStats;
+  stopping: StoppingStats;
   sessions: string[];
   shots: Shot[];
 }
@@ -128,6 +131,16 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       ballSpeed: numeric((s) => s.ballSpeedMph),
       smash: numeric((s) => s.smashFactor),
     });
+    const cat = categoryOf(club);
+    const rolls = cleanShots
+      .filter((s) => s.totalYards != null && s.carryYards != null)
+      .map((s) => (s.totalYards as number) - (s.carryYards as number));
+    const stopping = stoppingStats({
+      descent: numeric((s) => s.descentAngleDeg),
+      roll: rolls,
+      total: numeric((s) => s.totalYards),
+      scoringClub: cat === "iron" || cat === "wedge" || cat === "hybrid",
+    });
 
     clubs.push({
       club,
@@ -146,6 +159,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       },
       adequacy,
       dispersion,
+      stopping,
       // filled in below
       trend: undefined as unknown as TrendVerdict,
       hints: [],

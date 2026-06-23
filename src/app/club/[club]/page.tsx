@@ -148,6 +148,38 @@ export default function ClubDetail() {
         <DispersionChart shots={club.shots} />
       </section>
 
+      {/* Stopping power */}
+      <section className="card p-4">
+        <h2 className="mb-1 font-semibold">
+          Stopping power
+          {club.stopping.landing !== "unknown" && (
+            <span
+              className={`ml-2 ${
+                club.stopping.landing === "soft"
+                  ? "badge-ok"
+                  : club.stopping.landing === "hot"
+                    ? "badge-warn"
+                    : "badge-muted"
+              }`}
+            >
+              {club.stopping.landing}
+            </span>
+          )}
+        </h2>
+        <p className="text-sm text-slate-600">{club.stopping.note}</p>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          {club.stopping.rollYardsMean != null && (
+            <DispChip label="Avg roll" value={`${fmt(club.stopping.rollYardsMean, 1)} yds`} />
+          )}
+          {club.stopping.descentAngleMean != null && (
+            <DispChip
+              label="Descent angle"
+              value={`${fmt(club.stopping.descentAngleMean, 1)}°`}
+            />
+          )}
+        </div>
+      </section>
+
       {/* Equipment hints */}
       <section className="card p-4">
         <h2 className="mb-1 font-semibold">

@@ -9,3 +9,4 @@ export * from "./gapping";
 export * from "./trend";
 export * from "./equipment";
 export * from "./dispersion";
+export * from "./stopping";
