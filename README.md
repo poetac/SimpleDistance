@@ -40,9 +40,18 @@ and PR.
 
 The UI aims for WCAG-AA basics: a skip-to-content link, `main`/`nav` landmarks, per-route
 document titles, `scope`-d table headers with screen-reader captions, contextual
-`aria-label`s on row actions, a keyboard-operable CSV drop zone, visible focus rings, and
+`aria-label`s on row actions, a keyboard-operable CSV drop zone, visible focus rings,
 `role="img"` text summaries on every chart so the data isn't conveyed by color/visuals
-alone. `npm run lint` (eslint-config-next, includes jsx-a11y) is clean.
+alone, and **focus-trapped, Escape-dismissable confirmation dialogs** for destructive
+actions (no native `confirm()`/`alert()`). `npm run lint` (eslint-config-next, includes
+jsx-a11y) is clean.
+
+### Install / offline (PWA)
+
+SimpleDistance ships a web app manifest and an offline-first service worker (registered in
+production), so it's **installable** and keeps working **offline** after the first visit —
+fitting for range/course use with no signal. All data already lives in IndexedDB, so nothing
+needs the network. Regenerate the app icons with `node scripts/gen-icons.mjs`.
 
 ### Try it immediately
 

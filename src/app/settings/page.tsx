@@ -6,10 +6,17 @@ import { usePageTitle } from "@/components/usePageTitle";
 import { normalizeClub, clubLabel } from "@/lib/domain/clubs";
 import { CANONICAL_CLUB_ORDER } from "@/lib/domain/clubs";
 import type { AppSettings } from "@/lib/domain/types";
-import { getImports, exportBundle } from "@/lib/db";
+import { getImports, exportBundle, type BackupBundle } from "@/lib/db";
 import type { ImportRecord } from "@/lib/domain/types";
 import { shotsToCsv } from "@/lib/export";
 import { downloadFile, readFileAsText } from "@/lib/download";
+import { ConfirmDialog, type DialogAction } from "@/components/ConfirmDialog";
+
+type DialogState =
+  | { kind: "clear" }
+  | { kind: "reseed" }
+  | { kind: "restore"; bundle: unknown }
+  | null;
 
 export default function SettingsPage() {
   const {
@@ -31,6 +38,7 @@ export default function SettingsPage() {
   const [imports, setImports] = useState<ImportRecord[]>([]);
   const [restoreMsg, setRestoreMsg] = useState("");
   const restoreInputRef = useRef<HTMLInputElement>(null);
+  const [dialog, setDialog] = useState<DialogState>(null);
 
   async function exportJson() {
     const bundle = await exportBundle();
@@ -54,15 +62,19 @@ export default function SettingsPage() {
     try {
       const text = await readFileAsText(file);
       const bundle = JSON.parse(text);
-      const mode = confirm(
-        "Replace all current shots with the backup?\n\nOK = replace, Cancel = merge into existing.",
-      )
-        ? "replace"
-        : "merge";
-      const n = await restore(bundle, mode);
+      setDialog({ kind: "restore", bundle });
+    } catch {
+      setRestoreMsg("Could not read that backup file.");
+    }
+  }
+
+  async function runRestore(bundle: unknown, mode: "merge" | "replace") {
+    setDialog(null);
+    try {
+      const n = await restore(bundle as BackupBundle, mode);
       setRestoreMsg(`Restored ${n} shots (${mode}).`);
     } catch (e) {
-      setRestoreMsg(e instanceof Error ? e.message : "Could not read that backup.");
+      setRestoreMsg(e instanceof Error ? e.message : "Could not restore that backup.");
     }
   }
 
@@ -311,27 +323,74 @@ export default function SettingsPage() {
               e.target.value = "";
             }}
           />
-          <button
-            className="btn-ghost"
-            onClick={() => {
-              if (confirm("Reload the demo 5-iron dataset? This replaces all current shots."))
-                reseed();
-            }}
-          >
+          <button className="btn-ghost" onClick={() => setDialog({ kind: "reseed" })}>
             Reset to demo data
           </button>
           <button
             className="btn-ghost text-rose-600"
-            onClick={() => {
-              if (confirm("Delete ALL shots and imports? This cannot be undone."))
-                clearAll();
-            }}
+            onClick={() => setDialog({ kind: "clear" })}
           >
             Clear all data
           </button>
         </div>
         {restoreMsg && <p className="mt-2 text-sm text-slate-500">{restoreMsg}</p>}
       </section>
+
+      <ConfirmDialog
+        open={dialog?.kind === "clear"}
+        title="Delete all data?"
+        body="This permanently removes all shots and import history from this browser. It cannot be undone."
+        onCancel={() => setDialog(null)}
+        actions={[
+          {
+            label: "Delete everything",
+            variant: "danger",
+            onClick: () => {
+              clearAll();
+              setDialog(null);
+            },
+          },
+        ]}
+      />
+
+      <ConfirmDialog
+        open={dialog?.kind === "reseed"}
+        title="Reset to demo data?"
+        body="This replaces all current shots with the demo 5-iron dataset."
+        onCancel={() => setDialog(null)}
+        actions={[
+          {
+            label: "Reset to demo",
+            onClick: () => {
+              reseed();
+              setDialog(null);
+            },
+          },
+        ]}
+      />
+
+      <ConfirmDialog
+        open={dialog?.kind === "restore"}
+        title="Restore backup"
+        body="Replace your current shots with the backup, or merge the backup into what you already have?"
+        onCancel={() => setDialog(null)}
+        actions={
+          (dialog?.kind === "restore"
+            ? [
+                {
+                  label: "Merge",
+                  variant: "primary",
+                  onClick: () => runRestore(dialog.bundle, "merge"),
+                },
+                {
+                  label: "Replace",
+                  variant: "danger",
+                  onClick: () => runRestore(dialog.bundle, "replace"),
+                },
+              ]
+            : []) as DialogAction[]
+        }
+      />
     </div>
   );
 }

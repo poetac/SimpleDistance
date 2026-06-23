@@ -1,12 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { DataProvider } from "@/components/DataProvider";
 import { Nav } from "@/components/Nav";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
   title: "SimpleDistance — Golf Stock Yardages & Bag Optimization",
   description:
     "Find your true stock yardages and optimize your bag — separating real trends from session noise.",
+  appleWebApp: { capable: true, title: "SimpleDistance", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2f9e54",
 };
 
 export default function RootLayout({
@@ -17,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <ServiceWorkerRegister />
         <DataProvider>
           <div className="min-h-screen">
             <a
