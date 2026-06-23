@@ -82,14 +82,22 @@ and analysis modules. CI runs typecheck + lint + test + build.
 
 ## Fresh backlog (pick top-down; each item lists acceptance criteria)
 
-### ✅ Done this round
-- **Bag-recommendation engine** (`src/lib/bagAdvice.ts`): typical-gap progression, holes with a
-  target carry, overlaps, inversions — scoped to the actionable scoring region. Feeds
-  recommendations + a "Bag structure" dashboard panel.
-- **Stopping-power & total-distance** (`src/lib/stats/stopping.ts`): roll/descent → lands
-  soft/medium/hot for scoring clubs; long clubs described, not judged. On Club detail.
-- **Component/integration tests**: jsdom + Testing Library + fake-indexeddb cover `ConfirmDialog`
-  (focus/keyboard) and the `DataProvider` IndexedDB seed→analysis path. Suite is ~119 tests.
+### ✅ Done (recent rounds)
+- **Bag-recommendation engine** (`src/lib/bagAdvice.ts`), **confidence-gated**: holes/overlaps/
+  inversions with target carries, scoped to the scoring region; advice leaning on a low-sample
+  club is marked `tentative` and de-prioritized. Feeds a "Bag structure" panel.
+- **14-club bag optimizer** (`src/lib/bagOptimizer.ts`): even target gap ladder, anchors,
+  matched/adjust/gap/redundant, budget check. `/optimize` route.
+- **Stopping-power** (`src/lib/stats/stopping.ts`): roll/descent → soft/medium/hot.
+- **Session/round metadata** (`sessions` store, `/sessions` page) + mixed-condition warning in
+  `/changes` via `sessionDiff`'s `conditionWarning`.
+- **Hardened import pipeline**: delimiter (`,`/`;`/tab/`|`) + BOM detection, hyphen/underscore
+  club labels, categorized skip report, `importSanity` plausibility checks.
+- **Component/integration + pipeline-validation tests**: jsdom + Testing Library +
+  fake-indexeddb (`ConfirmDialog`, `DataProvider`), plus an independent synthetic-corpus test
+  proving the corpus→recommendations stack generalizes beyond the demo seed. Suite ~146 tests.
+
+### Remaining ideas
 
 ### 1. Session/round metadata
 Let users name sessions and tag conditions (indoor/outdoor, wind, temperature, ball). Use tags
