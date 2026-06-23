@@ -20,7 +20,11 @@ describe("club normalization", () => {
     ["52", "52"],
     ["56°", "56"],
     ["60 deg", "60"],
+    ["45", "45"],
     ["Sand Wedge", "SW"],
+    ["1 iron", "1I"],
+    ["driving iron", "1I"],
+    ["DI", "1I"],
   ];
 
   for (const [raw, expected] of cases) {
@@ -43,5 +47,8 @@ describe("club normalization", () => {
     expect(clubLabel("56")).toBe("56° Wedge");
     expect(clubOrderIndex("DR")).toBeLessThan(clubOrderIndex("5I"));
     expect(clubOrderIndex("5I")).toBeLessThan(clubOrderIndex("PW"));
+    // 1-iron sits between hybrids and the 2-iron, not at the unknown tail.
+    expect(clubOrderIndex("1I")).toBeLessThan(clubOrderIndex("2I"));
+    expect(clubOrderIndex("1I")).toBeLessThan(clubOrderIndex("PW"));
   });
 });

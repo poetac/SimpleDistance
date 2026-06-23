@@ -1,8 +1,6 @@
 // Unit-aware conversion and detection. Distances normalize to YARDS, speeds to
 // MPH. Many range systems (and Inrange) default to meters / m/s.
 
-import { MAX_PLAUSIBLE_CARRY_YARDS } from "../stats/constants";
-
 export const METERS_TO_YARDS = 1.09361;
 export const MS_TO_MPH = 2.23694;
 export const KMH_TO_MPH = 0.621371;
@@ -24,30 +22,24 @@ export type DetectedDistanceUnit = "yards" | "meters";
 export type DetectedSpeedUnit = "mph" | "ms" | "kmh";
 
 /**
- * Heuristically detect whether a column of distances is yards or meters.
- * Driver carries top out ~320 yds (~293 m). If the 90th percentile of values
- * is implausibly small for yards-of-a-driver but plausible for meters, or the
- * header hints at meters, we call it meters. Header hints win.
+ * Detect whether a distance column is yards or meters.
+ *
+ * Honest note: magnitude ALONE cannot disambiguate — a driver in meters
+ * (~270 m) overlaps a mid-iron in yards (~170 yds), so any size-based guess
+ * would silently mis-scale real data. We therefore rely on the header hint, and
+ * otherwise default to yards. The import UI exposes a unit selector (seeded from
+ * the source preset) so the user can confirm/override, and the preview shows the
+ * values — nothing is rescaled behind their back.
+ *
+ * `values` is accepted for API symmetry with detectSpeedUnit and future use.
  */
 export function detectDistanceUnit(
-  values: number[],
+  _values: number[],
   header?: string,
 ): DetectedDistanceUnit {
   const h = (header || "").toLowerCase();
   if (/\b(m|meter|metre|metres|meters)\b/.test(h) || h.includes("(m)")) return "meters";
   if (/\b(yd|yds|yard|yards)\b/.test(h) || h.includes("(y)")) return "yards";
-
-  const xs = values.filter((v) => Number.isFinite(v) && v > 0).sort((a, b) => a - b);
-  if (xs.length === 0) return "yards";
-  const p90 = xs[Math.floor(xs.length * 0.9)];
-  // A real golfer's longest carries rarely exceed ~320 yds. If max is modest
-  // and clustered low, meters is plausible; but absent a strong signal we keep
-  // yards as the safe default to avoid silently rescaling. We only flip to
-  // meters when values are clearly too big to be... no: meters values are
-  // SMALLER. So we cannot tell from size alone reliably; rely on header.
-  // As a weak tiebreaker, values above the plausible yard ceiling are bad rows,
-  // not a unit signal, so default to yards.
-  if (p90 > MAX_PLAUSIBLE_CARRY_YARDS) return "yards";
   return "yards";
 }
 

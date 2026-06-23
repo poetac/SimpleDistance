@@ -57,7 +57,7 @@ export function equipmentHints(
   const nbSpin = avgOf(neighbors.map((n) => n.spin));
 
   // --- Ball-speed reasoning (separates "speed/contact" from "delivery") ---
-  if (target.ballSpeed != null && nbBallSpeed != null) {
+  if (target.ballSpeed != null && nbBallSpeed != null && nbBallSpeed > 0) {
     const rel = (target.ballSpeed - nbBallSpeed) / nbBallSpeed;
     const inline = Math.abs(rel) <= BALL_SPEED_INLINE_PCT;
 

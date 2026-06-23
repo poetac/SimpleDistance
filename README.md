@@ -33,7 +33,16 @@ npm run typecheck # tsc --noEmit
 npx tsx scripts/gen-samples.ts   # regenerate /samples from the seed dataset
 ```
 
-CI (`.github/workflows/ci.yml`) runs `typecheck`, `test`, and `build` on every push and PR.
+CI (`.github/workflows/ci.yml`) runs `typecheck`, `test`, `lint`, and `build` on every push
+and PR.
+
+### Accessibility
+
+The UI aims for WCAG-AA basics: a skip-to-content link, `main`/`nav` landmarks, per-route
+document titles, `scope`-d table headers with screen-reader captions, contextual
+`aria-label`s on row actions, a keyboard-operable CSV drop zone, visible focus rings, and
+`role="img"` text summaries on every chart so the data isn't conveyed by color/visuals
+alone. `npm run lint` (eslint-config-next, includes jsx-a11y) is clean.
 
 ### Try it immediately
 
@@ -117,6 +126,13 @@ CSV exports vary, so import is a 3-step flow (**Upload → Map columns → Confi
    per-column heuristic.
 3. **You confirm/adjust** the mapping, source preset, and units in the UI, see a live
    preview, and import. Re-imports of the same source reuse the same mapping.
+
+Number parsing is **locale-aware**: `150,5` (European decimal comma) and `1,505` (US
+thousands) are both read correctly, so meters-and-commas exports aren't silently 10×'d.
+Negative carries/totals are rejected rather than corrupting an average. Distances are
+yards/meters-aware; **speed** auto-detects mph vs m/s vs km/h by header and magnitude, while
+**distance** units rely on the header/preset (magnitude alone can't tell a driver-in-meters
+from a mid-iron-in-yards) and are always user-confirmable in the import UI.
 
 Presets for **TrackMan** and **Inrange** live in
 [`src/lib/import/presets.ts`](./src/lib/import/presets.ts). They are *hints*, not hardcoded

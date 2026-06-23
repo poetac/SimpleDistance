@@ -39,13 +39,18 @@ export const CANONICAL_FIELDS: CanonicalFieldDef[] = [
     label: "Carry distance",
     kind: "distance",
     required: true,
-    detect: [/carry/i, /\bcarry\s*(distance|dist)\b/i],
+    // Exclude "Carry Side" (via lookahead) so it doesn't steal the side column.
+    detect: [
+      /\bcarry\s*(distance|dist|yds|yards|m)\b/i,
+      /^carry(?!\s*side)/i,
+      /\bcarry\b(?!\s*side)/i,
+    ],
   },
   {
     key: "totalYards",
     label: "Total distance",
     kind: "distance",
-    detect: [/\btotal\b/i, /\btotal\s*(distance|dist)\b/i],
+    detect: [/\btotal\s*(distance|dist|yds|yards|m)\b/i, /^total/i, /\btotal\b/i],
   },
   {
     key: "timestamp",
@@ -93,13 +98,13 @@ export const CANONICAL_FIELDS: CanonicalFieldDef[] = [
     key: "launchDirectionDeg",
     label: "Launch direction",
     kind: "angle",
-    detect: [/launch\s*dir/i, /\bhla\b/i, /\bazimuth\b/i, /\bdirection\b/i],
+    detect: [/launch\s*dir/i, /\bhla\b/i, /\bazimuth\b/i, /^direction$/i],
   },
   {
     key: "sideYards",
     label: "Side / offline",
     kind: "distance",
-    detect: [/\bside\b/i, /offline/i, /\bcarry\s*side\b/i, /\blateral\b/i],
+    detect: [/\bcarry\s*side\b/i, /^side\b/i, /offline/i, /\blateral\b/i, /\bside\b/i],
   },
   {
     key: "apexFt",

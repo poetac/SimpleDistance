@@ -11,10 +11,12 @@ import { PRESETS } from "@/lib/import/presets";
 import { rowsToShots } from "@/lib/import/transform";
 import { detectDistanceUnit, detectSpeedUnit } from "@/lib/import/units";
 import { getAliasMap, addImport } from "@/lib/db";
+import { usePageTitle } from "@/components/usePageTitle";
 
 type Step = "upload" | "map" | "done";
 
 export default function ImportPage() {
+  usePageTitle("Import");
   const { addShots, reload } = useData();
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -123,12 +125,22 @@ export default function ImportPage() {
 
       {step === "upload" && (
         <div
-          className="card flex flex-col items-center justify-center gap-3 border-dashed p-10 text-center"
+          role="button"
+          tabIndex={0}
+          aria-label="Upload a CSV: drop a file here, or press Enter to browse"
+          className="card flex cursor-pointer flex-col items-center justify-center gap-3 border-dashed p-10 text-center"
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
             const f = e.dataTransfer.files?.[0];
             if (f) handleFile(f);
+          }}
+          onClick={() => fileInput.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              fileInput.current?.click();
+            }
           }}
         >
           <p className="text-slate-600">
@@ -144,10 +156,16 @@ export default function ImportPage() {
               if (f) handleFile(f);
             }}
           />
-          <button className="btn-primary" onClick={() => fileInput.current?.click()}>
+          <button
+            className="btn-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              fileInput.current?.click();
+            }}
+          >
             Choose CSV
           </button>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Sample files live in <code>/samples</code>. Everything stays in your
             browser.
           </p>
@@ -196,7 +214,7 @@ export default function ImportPage() {
                 <option value="kmh">km/h</option>
               </select>
             </label>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               {table.rows.length} rows · {table.headers.length} columns detected
             </p>
           </div>
@@ -206,12 +224,18 @@ export default function ImportPage() {
             <h2 className="mb-3 font-semibold">Map columns</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {CANONICAL_FIELDS.map((f) => (
-                <label key={f.key} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-600">
+                <div key={f.key} className="flex items-center justify-between gap-3 text-sm">
+                  <label htmlFor={`map-${f.key}`} className="text-slate-600">
                     {f.label}
-                    {f.required && <span className="text-rose-500"> *</span>}
-                  </span>
+                    {f.required && (
+                      <span className="text-rose-600" aria-hidden="true">
+                        {" "}*
+                      </span>
+                    )}
+                    {f.required && <span className="sr-only"> (required)</span>}
+                  </label>
                   <select
+                    id={`map-${f.key}`}
                     className="w-1/2 rounded-lg border border-slate-300 px-2 py-1.5"
                     value={mapping[f.key] ?? ""}
                     onChange={(e) =>
@@ -228,7 +252,7 @@ export default function ImportPage() {
                       </option>
                     ))}
                   </select>
-                </label>
+                </div>
               ))}
             </div>
             {missingRequired.length > 0 && (
@@ -314,7 +338,7 @@ function Steps({ step }: { step: Step }) {
           <li
             key={s}
             className={`rounded-full px-3 py-1 ${
-              active ? "bg-fairway-100 text-fairway-700" : "bg-slate-100 text-slate-400"
+              active ? "bg-fairway-100 text-fairway-700" : "bg-slate-100 text-slate-500"
             }`}
           >
             {i + 1}. {labels[s]}
@@ -333,9 +357,9 @@ function PreviewTable({ table, mapping }: { table: RawTable; mapping: ColumnMapp
       <thead>
         <tr>
           {mapped.map(([field, header]) => (
-            <th key={field}>
+            <th key={field} scope="col">
               {CANONICAL_FIELDS.find((f) => f.key === field)?.label}
-              <span className="block text-[10px] font-normal normal-case text-slate-400">
+              <span className="block text-[10px] font-normal normal-case text-slate-500">
                 {header}
               </span>
             </th>

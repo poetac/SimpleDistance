@@ -19,9 +19,17 @@ export default function RootLayout({
       <body>
         <DataProvider>
           <div className="min-h-screen">
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-fairway-600 focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+            >
+              Skip to main content
+            </a>
             <Nav />
-            <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-            <footer className="mx-auto max-w-6xl px-4 py-8 text-xs text-slate-400">
+            <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 outline-none">
+              {children}
+            </main>
+            <footer className="mx-auto max-w-6xl px-4 py-8 text-xs text-slate-500">
               SimpleDistance is decision support, not a club fitting. All data
               stays in your browser. See METHODOLOGY.md for every statistic and
               threshold.

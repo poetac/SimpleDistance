@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useData } from "@/components/DataProvider";
 import { normalizeClub, clubLabel, clubOrderIndex } from "@/lib/domain/clubs";
 import type { Shot } from "@/lib/domain/types";
 import { fmt } from "@/components/badges";
+import { usePageTitle } from "@/components/usePageTitle";
 
 const EMPTY = {
   club: "",
@@ -19,11 +20,13 @@ const EMPTY = {
 };
 
 export default function ShotsPage() {
+  usePageTitle("Shots");
   const { loading, shots, addShots, saveShot, removeShot, aliases } = useData();
   const [form, setForm] = useState({ ...EMPTY });
   const [editing, setEditing] = useState<Shot | null>(null);
   const [filter, setFilter] = useState("");
   const [msg, setMsg] = useState("");
+  const clubInputRef = useRef<HTMLInputElement>(null);
 
   function startEdit(s: Shot) {
     setEditing(s);
@@ -39,7 +42,11 @@ export default function ShotsPage() {
       sideYards: s.sideYards?.toString() ?? "",
     });
     setMsg("");
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    // Move focus to the form so keyboard/SR users land on the edit fields.
+    requestAnimationFrame(() => {
+      clubInputRef.current?.focus();
+      clubInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   function cancelEdit() {
@@ -132,6 +139,7 @@ export default function ShotsPage() {
         <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
           <Field label="Club *" hint={normalizedClub ? `→ ${normalizedClub}` : "e.g. 7i, PW, 56"}>
             <input
+              ref={clubInputRef}
               className="input"
               value={form.club}
               onChange={(e) => setForm({ ...form, club: e.target.value })}
@@ -201,15 +209,17 @@ export default function ShotsPage() {
           <table className="data">
             <thead className="sticky top-0 bg-white">
               <tr>
-                <th>Club</th>
-                <th>Session</th>
-                <th>Carry</th>
-                <th>Total</th>
-                <th>Ball</th>
-                <th>Spin</th>
-                <th>Side</th>
-                <th>Src</th>
-                <th></th>
+                <th scope="col">Club</th>
+                <th scope="col">Session</th>
+                <th scope="col">Carry</th>
+                <th scope="col">Total</th>
+                <th scope="col">Ball</th>
+                <th scope="col">Spin</th>
+                <th scope="col">Side</th>
+                <th scope="col">Src</th>
+                <th scope="col">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -222,16 +232,18 @@ export default function ShotsPage() {
                   <td>{fmt(s.ballSpeedMph ?? NaN, 1)}</td>
                   <td>{s.spinRpm ?? "—"}</td>
                   <td>{fmt(s.sideYards ?? NaN, 1)}</td>
-                  <td className="text-xs text-slate-400">{s.source}</td>
+                  <td className="text-xs text-slate-500">{s.source}</td>
                   <td className="whitespace-nowrap">
                     <button
-                      className="text-xs text-fairway-600 hover:underline"
+                      className="text-xs text-fairway-700 hover:underline"
+                      aria-label={`Edit ${clubLabel(s.club)} shot, ${fmt(s.carryYards ?? NaN, 0)} yard carry, session ${s.sessionId}`}
                       onClick={() => startEdit(s)}
                     >
                       edit
                     </button>
                     <button
-                      className="ml-2 text-xs text-rose-500 hover:underline"
+                      className="ml-2 text-xs text-rose-600 hover:underline"
+                      aria-label={`Delete ${clubLabel(s.club)} shot, ${fmt(s.carryYards ?? NaN, 0)} yard carry, session ${s.sessionId}`}
                       onClick={() => removeShot(s.id)}
                     >
                       delete
@@ -241,7 +253,7 @@ export default function ShotsPage() {
               ))}
               {!loading && sorted.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-6 text-center text-slate-400">
+                  <td colSpan={9} className="py-6 text-center text-slate-500">
                     No shots yet.
                   </td>
                 </tr>
@@ -267,7 +279,7 @@ function Field({
     <label className="text-sm">
       <span className="mb-1 flex items-center justify-between">
         <span className="font-medium text-slate-600">{label}</span>
-        {hint && <span className="text-xs text-slate-400">{hint}</span>}
+        {hint && <span className="text-xs text-slate-500">{hint}</span>}
       </span>
       {children}
     </label>

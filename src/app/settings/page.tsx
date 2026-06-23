@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useData } from "@/components/DataProvider";
+import { usePageTitle } from "@/components/usePageTitle";
 import { normalizeClub, clubLabel } from "@/lib/domain/clubs";
 import { CANONICAL_CLUB_ORDER } from "@/lib/domain/clubs";
 import type { AppSettings } from "@/lib/domain/types";
@@ -23,11 +24,13 @@ export default function SettingsPage() {
     shots,
   } = useData();
 
+  usePageTitle("Settings");
   const [local, setLocal] = useState<AppSettings>(settings);
   const [aliasRaw, setAliasRaw] = useState("");
   const [aliasClub, setAliasClub] = useState("");
   const [imports, setImports] = useState<ImportRecord[]>([]);
   const [restoreMsg, setRestoreMsg] = useState("");
+  const restoreInputRef = useRef<HTMLInputElement>(null);
 
   async function exportJson() {
     const bundle = await exportBundle();
@@ -130,7 +133,7 @@ export default function SettingsPage() {
             />
           </label>
         </div>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           Outlier exclusion never deletes data — excluded shots are only dropped
           from the active statistics and counted in the dashboard.
         </p>
@@ -172,7 +175,7 @@ export default function SettingsPage() {
             Add alias
           </button>
           {aliasRaw && (
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               auto-detect would map this to:{" "}
               {normalizeClub(aliasRaw) ?? "nothing"}
             </span>
@@ -180,14 +183,16 @@ export default function SettingsPage() {
         </form>
 
         {aliases.length === 0 ? (
-          <p className="text-sm text-slate-400">No custom aliases yet.</p>
+          <p className="text-sm text-slate-500">No custom aliases yet.</p>
         ) : (
           <table className="data">
             <thead>
               <tr>
-                <th>Raw label</th>
-                <th>Maps to</th>
-                <th></th>
+                <th scope="col">Raw label</th>
+                <th scope="col">Maps to</th>
+                <th scope="col">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -199,7 +204,8 @@ export default function SettingsPage() {
                   </td>
                   <td>
                     <button
-                      className="text-xs text-rose-500 hover:underline"
+                      className="text-xs text-rose-600 hover:underline"
+                      aria-label={`Remove alias mapping ${a.raw} to ${a.club}`}
                       onClick={() => removeAlias(a.raw)}
                     >
                       remove
@@ -216,15 +222,15 @@ export default function SettingsPage() {
       <section className="card p-4">
         <h2 className="mb-3 font-semibold">Import history</h2>
         {imports.length === 0 ? (
-          <p className="text-sm text-slate-400">Nothing imported yet.</p>
+          <p className="text-sm text-slate-500">Nothing imported yet.</p>
         ) : (
           <table className="data">
             <thead>
               <tr>
-                <th>File</th>
-                <th>Source</th>
-                <th>Shots</th>
-                <th>When</th>
+                <th scope="col">File</th>
+                <th scope="col">Source</th>
+                <th scope="col">Shots</th>
+                <th scope="col">When</th>
               </tr>
             </thead>
             <tbody>
@@ -257,19 +263,22 @@ export default function SettingsPage() {
           <button className="btn-ghost" onClick={exportCsv} disabled={shots.length === 0}>
             Export shots (CSV)
           </button>
-          <label className="btn-ghost cursor-pointer">
+          <button className="btn-ghost" onClick={() => restoreInputRef.current?.click()}>
             Restore backup…
-            <input
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleRestore(f);
-                e.target.value = "";
-              }}
-            />
-          </label>
+          </button>
+          <input
+            ref={restoreInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleRestore(f);
+              e.target.value = "";
+            }}
+          />
           <button
             className="btn-ghost"
             onClick={() => {

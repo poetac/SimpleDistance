@@ -46,8 +46,15 @@ function getDb(): Promise<IDBPDatabase<SDSchema>> {
   return dbPromise;
 }
 
-/** Seed demo data on first run only. Idempotent. */
-export async function ensureSeeded(): Promise<void> {
+/** Seed demo data on first run only. Idempotent and concurrency-safe
+ *  (React StrictMode mounts effects twice in dev). */
+let seedingPromise: Promise<void> | null = null;
+export function ensureSeeded(): Promise<void> {
+  if (!seedingPromise) seedingPromise = doSeed();
+  return seedingPromise;
+}
+
+async function doSeed(): Promise<void> {
   const db = await getDb();
   const seeded = await db.get("meta", "seeded");
   if (seeded) return;
@@ -104,6 +111,7 @@ export async function reseed(): Promise<void> {
   await db.clear("shots");
   await db.clear("imports");
   await db.delete("meta", "seeded");
+  seedingPromise = null; // allow ensureSeeded to run again
   await ensureSeeded();
 }
 

@@ -27,8 +27,13 @@ export function DispersionChart({ shots }: { shots: Shot[] }) {
     );
 
   const maxAbsSide = Math.max(10, ...points.map((p) => Math.abs(p.side))) * 1.15;
+  const avgSide = points.reduce((a, p) => a + p.side, 0) / points.length;
 
   return (
+    <div
+      role="img"
+      aria-label={`Shot pattern scatter of ${points.length} shots, averaging ${Math.abs(avgSide).toFixed(1)} yards ${avgSide >= 0 ? "right" : "left"} of target. Side on the horizontal axis, carry on the vertical.`}
+    >
     <ResponsiveContainer width="100%" height={300}>
       <ScatterChart margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" />
@@ -57,5 +62,6 @@ export function DispersionChart({ shots }: { shots: Shot[] }) {
         <Scatter data={points} fill="#2f9e54" fillOpacity={0.6} />
       </ScatterChart>
     </ResponsiveContainer>
+    </div>
   );
 }

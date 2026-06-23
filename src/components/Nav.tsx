@@ -15,15 +15,18 @@ export function Nav() {
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-fairway-600 text-white">
+        <Link href="/" className="flex items-center gap-2" aria-label="SimpleDistance home">
+          <span
+            aria-hidden="true"
+            className="grid h-8 w-8 place-items-center rounded-lg bg-fairway-600 text-white"
+          >
             ⛳
           </span>
           <span className="text-lg font-bold tracking-tight">
             Simple<span className="text-fairway-600">Distance</span>
           </span>
         </Link>
-        <nav className="flex items-center gap-1">
+        <nav aria-label="Primary" className="flex items-center gap-1">
           {links.map((l) => {
             const active =
               l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
@@ -31,6 +34,7 @@ export function Nav() {
               <Link
                 key={l.href}
                 href={l.href}
+                aria-current={active ? "page" : undefined}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                   active
                     ? "bg-fairway-100 text-fairway-700"

@@ -6,9 +6,11 @@ import { useData } from "@/components/DataProvider";
 import { GappingChart } from "@/components/charts/GappingChart";
 import { AdequacyBadge, FlagBadge, TrendBadge, fmt } from "@/components/badges";
 import { Recommendations } from "@/components/Recommendations";
+import { usePageTitle } from "@/components/usePageTitle";
 import { analyzeBag } from "@/lib/analysis";
 
 export default function Dashboard() {
+  usePageTitle("Dashboard");
   const { loading, analysis: fullAnalysis, settings, shots } = useData();
   const [session, setSession] = useState("");
 
@@ -105,18 +107,25 @@ export default function Dashboard() {
 
       <section className="card overflow-x-auto">
         <table className="data">
+          <caption className="sr-only">
+            Per-club stock yardages: sample size, mean and median carry, 95%
+            confidence interval, gap to the next club, sample-size verdict, trend
+            classification, and gapping flags.
+          </caption>
           <thead>
             <tr>
-              <th>Club</th>
-              <th>N</th>
-              <th>Mean</th>
-              <th>Median</th>
-              <th>95% CI</th>
-              <th>Gap</th>
-              <th>Sample</th>
-              <th>Trend</th>
-              <th>Flags</th>
-              <th></th>
+              <th scope="col">Club</th>
+              <th scope="col">N</th>
+              <th scope="col">Mean</th>
+              <th scope="col">Median</th>
+              <th scope="col">95% CI</th>
+              <th scope="col">Gap</th>
+              <th scope="col">Sample</th>
+              <th scope="col">Trend</th>
+              <th scope="col">Flags</th>
+              <th scope="col">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -128,7 +137,10 @@ export default function Dashboard() {
                   <td>
                     {c.n}
                     {c.excludedCount > 0 && (
-                      <span className="ml-1 text-xs text-slate-400">
+                      <span
+                        className="ml-1 text-xs text-slate-500"
+                        title={`${c.excludedCount} mishit outlier(s) excluded`}
+                      >
                         (−{c.excludedCount})
                       </span>
                     )}
@@ -150,7 +162,7 @@ export default function Dashboard() {
                     {c.trend.classification === "real-trend" ? (
                       <TrendBadge cls={c.trend.classification} />
                     ) : (
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         {c.trend.direction === "none" ? "—" : c.trend.classification}
                       </span>
                     )}

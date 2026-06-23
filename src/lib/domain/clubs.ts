@@ -20,6 +20,7 @@ export const CANONICAL_CLUB_ORDER: ClubId[] = [
   "3H",
   "4H",
   "5H",
+  "1I",
   "2I",
   "3I",
   "4I",
@@ -121,6 +122,9 @@ export function normalizeClub(
     s.match(/\b(?:hybrid|rescue)\s*(\d)\b/);
   if (hybrid) return `${hybrid[1]}H`;
 
+  // Driving iron / utility iron -> treat as a 1-iron slot.
+  if (/\b(driving\s*iron|utility\s*iron|di)\b/.test(s)) return "1I";
+
   // Named wedges
   if (/\b(pw|pitching wedge|p\.?w\.?)\b/.test(s) || s === "p") return "PW";
   if (/\b(aw|approach wedge|a\.?w\.?)\b/.test(s)) return "AW";
@@ -128,10 +132,10 @@ export function normalizeClub(
   if (/\b(sw|sand wedge|s\.?w\.?)\b/.test(s)) return "SW";
   if (/\b(lw|lob wedge|l\.?w\.?)\b/.test(s)) return "LW";
 
-  // Loft-keyed wedges: "52", "56°", "60 deg", "wedge 56"
+  // Loft-keyed wedges: "52", "56°", "60 deg", "wedge 56" (45°–64°)
   const loft =
-    s.match(/\b(4[6-9]|5\d|6[0-4])\s*(?:deg|degree|degrees|°|wedge|w)?\b/) ||
-    s.match(/\bwedge\s*(4[6-9]|5\d|6[0-4])\b/);
+    s.match(/\b(4[5-9]|5\d|6[0-4])\s*(?:deg|degree|degrees|°|wedge|w)?\b/) ||
+    s.match(/\bwedge\s*(4[5-9]|5\d|6[0-4])\b/);
   if (loft) return loft[1];
 
   // Irons: "5 iron", "5i", "iron 5", "i5", just "5"

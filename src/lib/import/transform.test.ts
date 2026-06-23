@@ -48,6 +48,65 @@ describe("auto mapping + transform", () => {
     expect(res.shots[0].ballSpeedMph).toBeCloseTo(111.8, 0); // 50 m/s ≈ 111.8 mph
   });
 
+  it("parses European decimal commas without 10x-ing distances", () => {
+    const table: RawTable = {
+      headers: ["Club", "Carry", "Ball Speed"],
+      rows: [{ Club: "7 Iron", Carry: "150,5", "Ball Speed": "112,4" }],
+    };
+    const { mapping } = autoDetectMapping(table.headers);
+    const res = rowsToShots(table, mapping, {
+      distanceUnit: "yards",
+      speedUnit: "mph",
+      source: "x",
+    });
+    expect(res.shots[0].carryYards).toBeCloseTo(150.5, 1); // not 1505
+    expect(res.shots[0].ballSpeedMph).toBeCloseTo(112.4, 1); // not 1124
+  });
+
+  it("treats a comma grouping of 3 digits as thousands", () => {
+    const table: RawTable = {
+      headers: ["Club", "Carry", "Spin Rate"],
+      rows: [{ Club: "DR", Carry: "250", "Spin Rate": "2,600" }],
+    };
+    const { mapping } = autoDetectMapping(table.headers);
+    const res = rowsToShots(table, mapping, {
+      distanceUnit: "yards",
+      speedUnit: "mph",
+      source: "x",
+    });
+    expect(res.shots[0].spinRpm).toBeCloseTo(2600, 0);
+  });
+
+  it("rejects negative distances rather than corrupting averages", () => {
+    const table: RawTable = {
+      headers: ["Club", "Carry", "Total"],
+      rows: [
+        { Club: "7 Iron", Carry: "-150", Total: "168" },
+        { Club: "7 Iron", Carry: "-5", Total: "-5" }, // both invalid -> skipped
+      ],
+    };
+    const { mapping } = autoDetectMapping(table.headers);
+    const res = rowsToShots(table, mapping, {
+      distanceUnit: "yards",
+      speedUnit: "mph",
+      source: "x",
+    });
+    expect(res.shots).toHaveLength(1);
+    expect(res.shots[0].carryYards).toBeUndefined(); // negative dropped
+    expect(res.shots[0].totalYards).toBeCloseTo(168, 0);
+    expect(res.rowsSkipped).toBe(1);
+  });
+
+  it("does not let a 'Carry Side' column steal the carry mapping", () => {
+    const table: RawTable = {
+      headers: ["Club", "Carry Side", "Carry"],
+      rows: [{ Club: "7 Iron", "Carry Side": "-3", Carry: "162" }],
+    };
+    const { mapping } = autoDetectMapping(table.headers);
+    expect(mapping.carryYards).toBe("Carry");
+    expect(mapping.sideYards).toBe("Carry Side");
+  });
+
   it("collects unmapped club labels instead of guessing", () => {
     const table: RawTable = {
       headers: ["Club", "Carry"],

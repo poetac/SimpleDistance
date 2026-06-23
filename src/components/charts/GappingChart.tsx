@@ -44,33 +44,62 @@ export function GappingChart({
   if (data.length === 0)
     return <p className="text-sm text-slate-500">No data to chart yet.</p>;
 
+  const flagged = data.filter((d) => d.flag !== "ok");
+  const summary =
+    `Carry distance per club: ` +
+    data.map((d) => `${d.club} ${d.carry} yards`).join(", ") +
+    (flagged.length
+      ? `. Flagged: ${flagged.map((d) => `${d.club} (${d.flag})`).join(", ")}.`
+      : ". No gapping issues flagged.");
+
   return (
-    <ResponsiveContainer width="100%" height={320}>
-      <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="club" tick={{ fontSize: 12 }} />
-        <YAxis
-          tick={{ fontSize: 12 }}
-          label={{
-            value: "Carry (yds)",
-            angle: -90,
-            position: "insideLeft",
-            style: { fontSize: 12, fill: "#64748b" },
-          }}
-        />
-        <Tooltip
-          formatter={(v: number, name) =>
-            name === "carry" ? [`${v} yds`, "Carry"] : [v, name]
-          }
-          labelFormatter={(l) => `Club: ${l}`}
-        />
-        <Bar dataKey="carry" radius={[4, 4, 0, 0]}>
-          {data.map((d, i) => (
-            <Cell key={i} fill={COLORS[d.flag as keyof typeof COLORS] ?? COLORS.ok} />
-          ))}
-          <ErrorBar dataKey="err" width={4} strokeWidth={1.5} stroke="#334155" />
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div>
+      <div role="img" aria-label={summary}>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="club" tick={{ fontSize: 12 }} />
+            <YAxis
+              tick={{ fontSize: 12 }}
+              label={{
+                value: "Carry (yds)",
+                angle: -90,
+                position: "insideLeft",
+                style: { fontSize: 12, fill: "#64748b" },
+              }}
+            />
+            <Tooltip
+              formatter={(v: number, name, item) =>
+                name === "carry"
+                  ? [
+                      `${v} yds${item?.payload?.flag && item.payload.flag !== "ok" ? ` — ${item.payload.flag}` : ""}`,
+                      "Carry",
+                    ]
+                  : [v, name]
+              }
+              labelFormatter={(l) => `Club: ${l}`}
+            />
+            <Bar dataKey="carry" radius={[4, 4, 0, 0]}>
+              {data.map((d, i) => (
+                <Cell key={i} fill={COLORS[d.flag as keyof typeof COLORS] ?? COLORS.ok} />
+              ))}
+              <ErrorBar dataKey="err" width={4} strokeWidth={1.5} stroke="#334155" />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+        <li className="flex items-center gap-1">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.ok }} /> OK
+        </li>
+        <li className="flex items-center gap-1">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.inversion }} /> Inversion
+        </li>
+        <li className="flex items-center gap-1">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.hole }} /> Overlap / hole
+        </li>
+        <li className="text-slate-500">Error bars show the 95% confidence interval.</li>
+      </ul>
+    </div>
   );
 }

@@ -31,7 +31,13 @@ export function SessionTrendChart({
     expected: Number(s.expectedMean.toFixed(1)),
   }));
 
+  const summary =
+    `Observed versus neighbor-expected carry per session: ` +
+    data.map((d) => `${d.session}: observed ${d.observed}, expected ${d.expected} yards`).join("; ") +
+    ".";
+
   return (
+    <div role="img" aria-label={summary}>
     <ResponsiveContainer width="100%" height={240}>
       <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" />
@@ -56,5 +62,6 @@ export function SessionTrendChart({
         />
       </LineChart>
     </ResponsiveContainer>
+    </div>
   );
 }

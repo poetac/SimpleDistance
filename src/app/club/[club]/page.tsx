@@ -8,12 +8,15 @@ import { SessionTrendChart } from "@/components/charts/SessionTrendChart";
 import { DispersionChart } from "@/components/charts/DispersionChart";
 import { AdequacyBadge, TrendBadge, fmt } from "@/components/badges";
 import { mean as avg } from "@/lib/stats/descriptive";
+import { clubLabel } from "@/lib/domain/clubs";
+import { usePageTitle } from "@/components/usePageTitle";
 
 export default function ClubDetail() {
   const params = useParams();
   const clubId = decodeURIComponent(
     Array.isArray(params.club) ? params.club[0] : (params.club as string),
   );
+  usePageTitle(clubLabel(clubId));
   const { loading, analysis, settings } = useData();
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
@@ -21,10 +24,21 @@ export default function ClubDetail() {
   if (!club)
     return (
       <div className="card p-6">
-        <p>No data for {clubId}.</p>
-        <Link href="/" className="mt-2 inline-block text-fairway-600">
-          ← Back to dashboard
-        </Link>
+        <h1 className="text-lg font-bold">No data for {clubLabel(clubId)}</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          You don&apos;t have any shots recorded for this club yet.
+        </p>
+        <div className="mt-3 flex gap-2">
+          <Link href="/import" className="btn-primary">
+            Import shots
+          </Link>
+          <Link href="/shots" className="btn-ghost">
+            Add manually
+          </Link>
+          <Link href="/" className="btn-ghost">
+            ← Dashboard
+          </Link>
+        </div>
       </div>
     );
 
@@ -118,7 +132,7 @@ export default function ClubDetail() {
       <section className="card p-4">
         <h2 className="mb-1 font-semibold">
           Equipment-vs-swing hints
-          <span className="ml-2 text-xs font-normal text-slate-400">
+          <span className="ml-2 text-xs font-normal text-slate-500">
             hypotheses to check — never a diagnosis
           </span>
         </h2>
@@ -143,7 +157,7 @@ export default function ClubDetail() {
                   >
                     leans {h.leaning}
                   </span>
-                  <span className="text-xs text-slate-400">{h.confidence} signal</span>
+                  <span className="text-xs text-slate-500">{h.confidence} signal</span>
                 </div>
                 <p className="mt-1 text-sm text-slate-700">{h.hypothesis}</p>
                 <p className="mt-1 text-xs text-slate-500">Evidence: {h.evidence}</p>
@@ -159,7 +173,7 @@ export default function ClubDetail() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="card p-3">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
       <div className="mt-1 text-lg font-bold">{value}</div>
     </div>
   );

@@ -31,14 +31,19 @@ export function DistributionChart({ values }: { values: number[] }) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={240}>
-      <BarChart data={bins} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-        <Tooltip labelFormatter={(l) => `~${l} yds`} />
-        <Bar dataKey="count" fill="#2f9e54" radius={[4, 4, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+    <div
+      role="img"
+      aria-label={`Carry distribution histogram across ${values.length} shots, ranging from ${Math.round(min)} to ${Math.round(max)} yards.`}
+    >
+      <ResponsiveContainer width="100%" height={240}>
+        <BarChart data={bins} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+          <Tooltip labelFormatter={(l) => `~${l} yds`} />
+          <Bar dataKey="count" fill="#2f9e54" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
