@@ -71,6 +71,33 @@ describe("bag advice engine", () => {
     const inv = a.items.find((i) => i.kind === "inversion");
     expect(inv).toBeDefined();
     expect(inv!.priority).toBe(1);
+    expect(inv!.tentative).toBe(false);
     expect(inv!.text.toLowerCase()).toMatch(/inversion|loft/);
+  });
+
+  it("marks advice tentative and de-prioritizes it when a club's sample is insufficient", () => {
+    const a = adviseBag([
+      { club: "4I", carry: 195, category: "iron", confidence: "trustworthy" },
+      { club: "5I", carry: 183, category: "iron", confidence: "trustworthy" },
+      { club: "6I", carry: 171, category: "iron", confidence: "trustworthy" },
+      // 7I is short but barely sampled -> the resulting hole is tentative.
+      { club: "7I", carry: 150, category: "iron", confidence: "insufficient" },
+      { club: "8I", carry: 138, category: "iron", confidence: "trustworthy" },
+    ]);
+    const hole = a.items.find((i) => i.kind === "hole");
+    expect(hole).toBeDefined();
+    expect(hole!.tentative).toBe(true);
+    expect(hole!.priority).toBe(4);
+    expect(hole!.text).toMatch(/Tentative/);
+  });
+
+  it("excludes unreliable clubs from the typical-gap calculation", () => {
+    const a = adviseBag([
+      { club: "6I", carry: 171, category: "iron", confidence: "trustworthy" },
+      { club: "7I", carry: 159, category: "iron", confidence: "trustworthy" },
+      // A wild, barely-sampled wedge gap shouldn't move the typical gap.
+      { club: "8I", carry: 100, category: "iron", confidence: "insufficient" },
+    ]);
+    expect(a.typicalGapYards).toBeCloseTo(12, 0);
   });
 });

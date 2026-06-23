@@ -126,6 +126,29 @@ when there's already a carry deviation to explain:
 These are explicitly labeled with a *lean* (equipment / swing / unclear) and a *weak* or
 *moderate* confidence. **None of them is a diagnosis.**
 
+## 7b. Bag optimization (the 14-club ladder)
+
+`optimizeBag` ([`src/lib/bagOptimizer.ts`](./src/lib/bagOptimizer.ts)) turns the reliable
+carries into a prescriptive target and checks it against the bag limit:
+
+- **Inputs are reliable clubs only** — clubs with an *insufficient* sample are excluded so a
+  noisy mean can't reshape the ladder. Bag advice (§5/§8) is likewise confidence-gated:
+  advice that leans on an unreliable club is marked **tentative** and de-prioritized.
+- **Anchors vs. ladder:** the **driver and woods are anchors**, kept as-is — you can't evenly
+  fill driver→wood gaps with extra clubs. The even ladder covers only the **gappable region**
+  (hybrids/irons/wedges), where a loft or club change is actionable.
+- **Target gap:** defaults to the player's demonstrated typical gap (median consecutive gap of
+  reliable scoring clubs); configurable.
+- **Ladder:** endpoints are pinned to the player's longest and shortest gappable clubs, with
+  evenly-spaced interior slots at the target gap. Each club is assigned to its nearest slot:
+  a slot with a club within ~0.4× the target is **matched**, farther is **adjust** (a loft
+  tweak centers it), an empty slot is a **gap** (add a club ~target carry), and a second club
+  crowding a slot is **redundant** (a candidate to drop).
+- **Budget:** default 14 clubs minus a putter = **13 full-swing slots**. The optimizer reports
+  the proposed count (anchors + kept + added − redundant) and whether you have room to add or
+  need to drop. If the bag has an inversion, the UI advises fixing it first, since corrected
+  carries re-sort the ladder. As always, this is decision support, not a fitting.
+
 ## 8. Recommendations (prioritization)
 
 The dashboard sorts actions so you address the highest-leverage problem first

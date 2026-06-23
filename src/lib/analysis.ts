@@ -28,6 +28,7 @@ import {
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
 import { adviseBag, type BagAdvice } from "./bagAdvice";
+import { optimizeBag, type BagOptimization } from "./bagOptimizer";
 import { categoryOf } from "./domain/clubs";
 
 export interface ClubAnalysis {
@@ -62,6 +63,7 @@ export interface BagAnalysis {
   clubs: ClubAnalysis[];
   gapping: GapAnalysis;
   bagAdvice: BagAdvice;
+  optimization: BagOptimization;
   recommendations: Recommendation[];
   totalShots: number;
   totalExcluded: number;
@@ -220,13 +222,28 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     usableClubs.map((c) => ({ club: c.club, carry: c.mean })),
   );
 
-  // Prescriptive bag advice (typical gap, holes/overlaps with target carries).
+  // Prescriptive bag advice (typical gap, holes/overlaps with target carries),
+  // confidence-aware so small/noisy samples don't drive structural advice.
   const bagAdvice = adviseBag(
     usableClubs.map((c) => ({
       club: c.club,
       carry: c.mean,
       category: categoryOf(c.club),
+      confidence: c.adequacy.level,
     })),
+  );
+
+  // 14-club optimization from the reliable clubs (insufficient-sample clubs are
+  // excluded so a noisy mean can't reshape the target ladder).
+  const optimization = optimizeBag(
+    usableClubs
+      .filter((c) => c.adequacy.level !== "insufficient")
+      .map((c) => ({ club: c.club, carry: c.mean, category: categoryOf(c.club) })),
+    {
+      targetGapYards: Number.isFinite(bagAdvice.typicalGapYards)
+        ? bagAdvice.typicalGapYards
+        : undefined,
+    },
   );
 
   const recommendations = buildRecommendations(clubs, bagAdvice);
@@ -237,6 +254,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     ),
     gapping,
     bagAdvice,
+    optimization,
     recommendations,
     totalShots: allShots.length,
     totalExcluded,

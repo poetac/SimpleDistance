@@ -24,7 +24,11 @@ export interface BagClub {
   club: ClubId;
   carry: number;
   category: ClubCategory;
+  /** Sample-confidence of this club's carry. Defaults to trustworthy. */
+  confidence?: ClubConfidence;
 }
+
+export type ClubConfidence = "insufficient" | "low" | "trustworthy";
 
 export type AdviceKind = "inversion" | "hole" | "overlap";
 
@@ -35,31 +39,45 @@ export interface BagAdviceItem {
   /** Approximate target carry for a club that would fill a hole. */
   suggestedCarry?: number;
   priority: number;
+  /** True when an involved club's carry isn't yet statistically reliable. */
+  tentative: boolean;
 }
 
 export interface BagAdvice {
-  /** Median consecutive gap among scoring clubs, the progression target. */
+  /** Median consecutive gap among reliable scoring clubs, the progression target. */
   typicalGapYards: number;
   items: BagAdviceItem[];
 }
 
 const SCORING: ClubCategory[] = ["hybrid", "iron", "wedge"];
 
+function reliable(c: BagClub): boolean {
+  return (c.confidence ?? "trustworthy") !== "insufficient";
+}
+
 /**
  * Build bag advice from per-club representative carries. Clubs are sorted by
- * canonical order; gaps are computed between adjacent clubs.
+ * canonical order; gaps are computed between adjacent clubs. Advice that leans
+ * on a club whose carry isn't yet statistically reliable is flagged `tentative`
+ * so a small, noisy sample can't masquerade as a structural problem.
  */
 export function adviseBag(input: BagClub[]): BagAdvice {
   const clubs = input
     .filter((c) => Number.isFinite(c.carry))
     .sort((a, b) => clubOrderIndex(a.club) - clubOrderIndex(b.club));
 
-  // Typical gap from scoring-club consecutive pairs (robust to top-of-bag spread).
+  // Typical gap from RELIABLE scoring-club consecutive pairs (robust to both
+  // top-of-bag spread and noisy small samples).
   const scoringGaps: number[] = [];
   for (let i = 1; i < clubs.length; i++) {
     const longer = clubs[i - 1];
     const shorter = clubs[i];
-    if (SCORING.includes(longer.category) && SCORING.includes(shorter.category)) {
+    if (
+      SCORING.includes(longer.category) &&
+      SCORING.includes(shorter.category) &&
+      reliable(longer) &&
+      reliable(shorter)
+    ) {
       const gap = longer.carry - shorter.carry;
       if (gap > 0) scoringGaps.push(gap);
     }
@@ -69,18 +87,29 @@ export function adviseBag(input: BagClub[]): BagAdvice {
 
   const items: BagAdviceItem[] = [];
 
+  const tentativeNote = (longer: BagClub, shorter: BagClub): string => {
+    const weak = [longer, shorter].filter((c) => !reliable(c)).map((c) => clubLabel(c.club));
+    return weak.length
+      ? ` Tentative — collect more data on ${weak.join(" and ")} to confirm.`
+      : "";
+  };
+
   for (let i = 1; i < clubs.length; i++) {
     const longer = clubs[i - 1];
     const shorter = clubs[i];
     const gap = longer.carry - shorter.carry;
+    const tentative = !reliable(longer) || !reliable(shorter);
 
     // Inversion: the longer-club slot actually carries shorter.
     if (gap < 0) {
       items.push({
         kind: "inversion",
         clubs: [longer.club, shorter.club],
-        priority: 1,
-        text: `${clubLabel(longer.club)} carries ${Math.abs(gap).toFixed(0)} yds shorter than ${clubLabel(shorter.club)} — an inversion. Have its loft/lie checked or confirm the gap with more shots.`,
+        priority: tentative ? 2 : 1,
+        tentative,
+        text:
+          `${clubLabel(longer.club)} carries ${Math.abs(gap).toFixed(0)} yds shorter than ${clubLabel(shorter.club)} — an inversion. Have its loft/lie checked or confirm the gap with more shots.` +
+          tentativeNote(longer, shorter),
       });
       continue;
     }
@@ -96,16 +125,22 @@ export function adviseBag(input: BagClub[]): BagAdvice {
       items.push({
         kind: "hole",
         clubs: [longer.club, shorter.club],
-        priority: 2,
+        priority: tentative ? 4 : 2,
+        tentative,
         suggestedCarry,
-        text: `${gap.toFixed(0)}-yd gap between ${clubLabel(longer.club)} and ${clubLabel(shorter.club)} (typical gap ~${target.toFixed(0)} yds). Consider ${fits === 1 ? "a club" : `${fits} clubs`} carrying ~${suggestedCarry.toFixed(0)} yds — a loft tweak or an added club would fill it.`,
+        text:
+          `${gap.toFixed(0)}-yd gap between ${clubLabel(longer.club)} and ${clubLabel(shorter.club)} (typical gap ~${target.toFixed(0)} yds). Consider ${fits === 1 ? "a club" : `${fits} clubs`} carrying ~${suggestedCarry.toFixed(0)} yds — a loft tweak or an added club would fill it.` +
+          tentativeNote(longer, shorter),
       });
     } else if (gap < Math.min(OVERLAP_GAP_YARDS, target * OVERLAP_FACTOR)) {
       items.push({
         kind: "overlap",
         clubs: [longer.club, shorter.club],
-        priority: 3,
-        text: `${clubLabel(longer.club)} and ${clubLabel(shorter.club)} carry within ${gap.toFixed(0)} yds (typical gap ~${target.toFixed(0)} yds) — they overlap. One may be redundant; widening the loft gap would spread them out.`,
+        priority: tentative ? 4 : 3,
+        tentative,
+        text:
+          `${clubLabel(longer.club)} and ${clubLabel(shorter.club)} carry within ${gap.toFixed(0)} yds (typical gap ~${target.toFixed(0)} yds) — they overlap. One may be redundant; widening the loft gap would spread them out.` +
+          tentativeNote(longer, shorter),
       });
     }
   }

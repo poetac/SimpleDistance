@@ -133,6 +133,7 @@ export default function Dashboard() {
                 }`}
               >
                 <span className="mr-2 font-semibold capitalize">{item.kind}:</span>
+                {item.tentative && <span className="badge-muted mr-2">tentative</span>}
                 {item.text}
               </li>
             ))}
