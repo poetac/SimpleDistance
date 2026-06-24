@@ -204,8 +204,9 @@ export async function exportBundle(): Promise<BackupBundle> {
 }
 
 /**
- * Restore a backup. `mode: "replace"` clears existing shots first; `mode:
- * "merge"` keeps them (shots with duplicate ids are overwritten).
+ * Restore a backup. `mode: "replace"` resets shots, aliases and sessions to the
+ * bundle (a faithful snapshot restore, used by Undo); `mode: "merge"` keeps
+ * existing data, overwriting only entries with matching keys.
  */
 export async function importBundle(
   bundle: BackupBundle,
@@ -217,6 +218,8 @@ export async function importBundle(
   const db = await getDb();
   if (mode === "replace") {
     await db.clear("shots");
+    await db.clear("aliases");
+    await db.clear("sessions");
   }
   const tx = db.transaction("shots", "readwrite");
   await Promise.all(bundle.shots.map((s) => tx.store.put(s)));

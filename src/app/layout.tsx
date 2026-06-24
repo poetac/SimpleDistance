@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { DataProvider } from "@/components/DataProvider";
 import { Nav } from "@/components/Nav";
+import { UndoBanner } from "@/components/UndoBanner";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
@@ -33,6 +34,9 @@ export default function RootLayout({
               Skip to main content
             </a>
             <Nav />
+            <div className="px-4">
+              <UndoBanner />
+            </div>
             <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 outline-none">
               {children}
             </main>
