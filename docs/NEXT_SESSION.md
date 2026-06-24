@@ -97,6 +97,13 @@ and analysis modules. CI runs typecheck + lint + test + build.
   fake-indexeddb (`ConfirmDialog`, `DataProvider`), plus an independent synthetic-corpus test
   proving the corpus→recommendations stack generalizes beyond the demo seed. Suite ~146 tests.
 
+### ✅ Also done
+- **Undo** for destructive actions (clear/reseed/restore/delete) via a pre-action snapshot +
+  `UndoBanner`.
+- **Import-flow component test** (jsdom) driving upload → map → confirm.
+- **Display-unit toggle** (yards/meters, mph/m·s) — a `Formatter` threaded through every engine
+  prose generator and all UI numbers/charts; data stays canonical. `src/lib/format.ts`.
+
 ### Remaining ideas
 
 ### 1. Session/round metadata
