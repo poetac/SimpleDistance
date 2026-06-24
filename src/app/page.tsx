@@ -61,7 +61,7 @@ export default function Dashboard() {
             {analysis.totalShots} shots · {analysis.clubs.length} clubs ·{" "}
             {analysis.totalExcluded} mishit
             {analysis.totalExcluded === 1 ? "" : "s"} excluded ·{" "}
-            {metricLabel} distance · {settings.targetCiHalfWidthYards}-yd target CI
+            {metricLabel} distance · {f.d(settings.targetCiHalfWidthYards)}-{f.dUnitAdj} target CI
           </p>
         </div>
         <div className="flex items-center gap-2">

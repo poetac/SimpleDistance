@@ -115,6 +115,24 @@ export function optimizeBag(
   const top = ladderClubs[0].carry;
   const bottom = ladderClubs[ladderClubs.length - 1].carry;
   const span = top - bottom;
+
+  // Degenerate bag: every scoring club carries (nearly) the same distance.
+  if (span < 1) {
+    return {
+      targetGapYards,
+      anchors,
+      ladder: [],
+      redundant: [],
+      gaps: [],
+      proposedCount: currentCount,
+      currentCount,
+      budget,
+      summary: [
+        `Your scoring clubs all carry about ${fmt.dist(top)} — there's no spread to build a ladder from. Spread their lofts out, or add longer/shorter clubs.`,
+      ],
+    };
+  }
+
   const slotCount = Math.max(2, Math.round(span / targetGapYards) + 1);
   const step = span / (slotCount - 1);
   const targets = Array.from({ length: slotCount }, (_, i) => top - i * step);

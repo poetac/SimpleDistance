@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useData } from "@/components/DataProvider";
 import { usePageTitle } from "@/components/usePageTitle";
+import { useFormatter } from "@/components/useFormatter";
 import { normalizeClub, clubLabel } from "@/lib/domain/clubs";
 import { CANONICAL_CLUB_ORDER } from "@/lib/domain/clubs";
 import type { AppSettings } from "@/lib/domain/types";
@@ -32,6 +33,7 @@ export default function SettingsPage() {
   } = useData();
 
   usePageTitle("Settings");
+  const f = useFormatter();
   const [local, setLocal] = useState<AppSettings>(settings);
   const [aliasRaw, setAliasRaw] = useState("");
   const [aliasClub, setAliasClub] = useState("");
@@ -170,16 +172,18 @@ export default function SettingsPage() {
 
           <label className="text-sm">
             <span className="mb-1 block font-medium text-slate-600">
-              Target CI half-width (yds)
+              Target CI half-width ({f.dUnit})
             </span>
             <input
               type="number"
               min={0.5}
               step={0.5}
               className="input w-28"
-              value={local.targetCiHalfWidthYards}
+              value={Number(f.d(local.targetCiHalfWidthYards, 1))}
               onChange={(e) =>
-                commit({ targetCiHalfWidthYards: Number(e.target.value) || 2 })
+                commit({
+                  targetCiHalfWidthYards: f.toYards(Number(e.target.value) || f.dVal(2)),
+                })
               }
             />
           </label>

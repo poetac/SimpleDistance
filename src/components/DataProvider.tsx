@@ -102,6 +102,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     analysis,
     reload,
     saveSessionMeta: async (meta) => {
+      setUndoSnapshot(null);
       await db.putSessionMeta(meta);
       await reload();
     },

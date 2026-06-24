@@ -83,6 +83,19 @@ describe("bag optimizer", () => {
     expect(o.summary.some((s) => /room for \d+ more/.test(s))).toBe(true);
   });
 
+  it("handles a degenerate bag where every scoring club carries the same", () => {
+    const o = optimizeBag(
+      bag([
+        ["6I", 160],
+        ["7I", 160],
+        ["8I", 160],
+      ]),
+    );
+    expect(o.ladder).toHaveLength(0);
+    expect(o.gaps).toHaveLength(0);
+    expect(o.summary[0]).toMatch(/no spread|same/i);
+  });
+
   it("warns when the proposed set exceeds the budget", () => {
     // A dense set + gaps that push proposed clubs over a small budget.
     const o = optimizeBag(evenSet, { budget: 6 });
