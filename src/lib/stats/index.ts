@@ -15,3 +15,4 @@ export * from "./playing";
 export * from "./tendency";
 export * from "./efficiency";
 export * from "./timeTrend";
+export * from "./shotShape";

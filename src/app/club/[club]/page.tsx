@@ -108,6 +108,11 @@ export default function ClubDetail() {
           )}
         </div>
         <p className="mt-2 text-sm text-slate-600">{club.tendency.label}</p>
+        {club.shotShape.shape !== "unknown" && (
+          <p className="mt-1 text-sm text-slate-600">
+            <span className="font-medium capitalize">{club.shotShape.shape}</span> — {club.shotShape.label}
+          </p>
+        )}
         {club.efficiency.meanSmash != null && (
           <p
             className={`mt-1 text-sm ${club.efficiency.flagged ? "text-amber-700" : "text-slate-600"}`}

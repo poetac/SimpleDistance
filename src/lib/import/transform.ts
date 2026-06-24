@@ -183,6 +183,10 @@ export function rowsToShots(
       spinRpm: num(get(row, "spinRpm")),
       launchDirectionDeg: num(get(row, "launchDirectionDeg")),
       descentAngleDeg: num(get(row, "descentAngleDeg")),
+      attackAngleDeg: num(get(row, "attackAngleDeg")),
+      clubPathDeg: num(get(row, "clubPathDeg")),
+      faceAngleDeg: num(get(row, "faceAngleDeg")),
+      sideSpinRpm: num(get(row, "sideSpinRpm")),
       source: opts.source,
     });
   });

@@ -22,6 +22,7 @@ import {
   directionTendency,
   strikeEfficiency,
   timeTrend,
+  shotShape,
   type ConfidenceInterval,
   type AdequacyVerdict,
   type TrendVerdict,
@@ -34,6 +35,7 @@ import {
   type DirectionTendency,
   type StrikeEfficiency,
   type TimeTrend,
+  type ShotShapeAnalysis,
 } from "./stats";
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
@@ -63,6 +65,7 @@ export interface ClubAnalysis {
   tendency: DirectionTendency;
   efficiency: StrikeEfficiency;
   timeTrend: TimeTrend;
+  shotShape: ShotShapeAnalysis;
   sessions: string[];
   shots: Shot[];
 }
@@ -177,6 +180,10 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     const playing = playingNumbers(cleanValues);
     const tendency = directionTendency(numeric((s) => s.sideYards));
     const efficiency = strikeEfficiency(numeric((s) => s.smashFactor), cat);
+    const shape = shotShape({
+      face: numeric((s) => s.faceAngleDeg),
+      path: numeric((s) => s.clubPathDeg),
+    });
 
     // Ordered session means (oldest → newest) for the time-series drift.
     const bySessionTime = new Map<string, { time: string; vals: number[] }>();
@@ -216,6 +223,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       tendency,
       efficiency,
       timeTrend: tTrend,
+      shotShape: shape,
       // filled in below
       trend: undefined as unknown as TrendVerdict,
       hints: [],

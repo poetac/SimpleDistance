@@ -143,7 +143,87 @@ const gRows = shots.map((s) => {
 });
 writeFileSync(join(outDir, "garmin-sample.csv"), csv([gHeader, ...gRows]));
 
+// --- Foresight GCQuad-style (yards/mph, full delivery; Peak Height + Side Spin) ---
+const fsHeader = [
+  "Date",
+  "Club",
+  "Ball Speed",
+  "Club Speed",
+  "Smash Factor",
+  "Carry",
+  "Total",
+  "Launch Angle",
+  "Launch Direction",
+  "Back Spin",
+  "Side Spin",
+  "Peak Height",
+  "Descent Angle",
+  "Angle of Attack",
+  "Club Path",
+  "Face Angle",
+];
+const fsRows = shots.map((s) => [
+  s.timestamp ?? "",
+  s.club,
+  r1(s.ballSpeedMph),
+  r1(s.clubSpeedMph),
+  s.smashFactor != null ? s.smashFactor.toFixed(2) : "",
+  r1(s.carryYards),
+  r1(s.totalYards),
+  r1(s.launchAngleDeg),
+  r1(s.launchDirectionDeg),
+  s.spinRpm != null ? String(s.spinRpm) : "",
+  s.sideSpinRpm != null ? String(s.sideSpinRpm) : "",
+  s.apexFt != null ? String(s.apexFt) : "",
+  r1(s.descentAngleDeg),
+  r1(s.attackAngleDeg),
+  r1(s.clubPathDeg),
+  r1(s.faceAngleDeg),
+]);
+writeFileSync(join(outDir, "foresight-sample.csv"), csv([fsHeader, ...fsRows]));
+
+// --- FlightScope Mevo+-style (yards/mph; Spin Loft + Lateral signatures) ---
+const flHeader = [
+  "Time",
+  "Club Type",
+  "Ball Speed",
+  "Club Speed",
+  "Smash Factor",
+  "Carry",
+  "Total",
+  "Vertical Launch",
+  "Horizontal Launch",
+  "Spin Rate",
+  "Spin Loft",
+  "Side Spin",
+  "Lateral",
+  "Apex",
+  "Angle of Attack",
+  "Club Path",
+  "Face Angle",
+];
+const flRows = shots.map((s) => [
+  s.timestamp ?? "",
+  s.club,
+  r1(s.ballSpeedMph),
+  r1(s.clubSpeedMph),
+  s.smashFactor != null ? s.smashFactor.toFixed(2) : "",
+  r1(s.carryYards),
+  r1(s.totalYards),
+  r1(s.launchAngleDeg),
+  r1(s.launchDirectionDeg),
+  s.spinRpm != null ? String(s.spinRpm) : "",
+  r1((s.launchAngleDeg ?? 0) + 12), // spin loft proxy (uncaptured signature col)
+  s.sideSpinRpm != null ? String(s.sideSpinRpm) : "",
+  r1(s.sideYards),
+  s.apexFt != null ? String(s.apexFt) : "",
+  r1(s.attackAngleDeg),
+  r1(s.clubPathDeg),
+  r1(s.faceAngleDeg),
+]);
+writeFileSync(join(outDir, "flightscope-sample.csv"), csv([flHeader, ...flRows]));
+
 // eslint-disable-next-line no-console
 console.log(
-  `Wrote ${tmRows.length} TrackMan, ${inRows.length} Inrange, ${gRows.length} Garmin rows to /samples`,
+  `Wrote ${tmRows.length} TrackMan, ${inRows.length} Inrange, ${gRows.length} Garmin, ${fsRows.length} Foresight, ${flRows.length} FlightScope rows to /samples`,
 );

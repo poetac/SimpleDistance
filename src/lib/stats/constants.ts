@@ -105,3 +105,10 @@ export const TIME_TREND_MIN_SESSIONS = 3;
 export const TIME_TREND_MIN_SLOPE = 1.5;
 export const TIME_TREND_MIN_R2 = 0.5;
 
+/**
+ * Shot shape from face-to-path (face angle − club path, degrees).
+ * Below SMALL it's effectively straight; above BIG it's a hook/slice.
+ */
+export const CURVE_SMALL_DEG = 2;
+export const CURVE_BIG_DEG = 6;
+
