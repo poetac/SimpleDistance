@@ -3,6 +3,7 @@ export * from "./constants";
 export * from "./descriptive";
 export * from "./distributions";
 export * from "./confidence";
+export * from "./bootstrap";
 export * from "./outliers";
 export * from "./adequacy";
 export * from "./gapping";

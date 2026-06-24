@@ -87,6 +87,15 @@ export default function ClubDetail() {
           <TrendBadge cls={club.trend.classification} />
         </div>
         <p className="mt-2 text-sm text-slate-600">{club.adequacy.message}</p>
+        {Number.isFinite(club.ci.lower) && (
+          <p className="mt-1 text-sm text-slate-600">
+            95% {settings.ciMethod === "bootstrap" ? "bootstrap" : "t"} CI:{" "}
+            <strong>
+              {f.d(club.ci.lower, 1)}–{f.dist(club.ci.upper, 1)}
+            </strong>{" "}
+            (mean {f.dist(club.mean, 1)}).
+          </p>
+        )}
         <p className="mt-1 text-sm text-slate-600">{club.trend.message}</p>
         {club.shotsNeeded.additionalNeeded > 0 && (
           <p className="mt-1 text-sm text-slate-500">

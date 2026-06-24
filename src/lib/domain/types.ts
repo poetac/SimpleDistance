@@ -98,6 +98,8 @@ export interface AppSettings {
   displayDistance: "yards" | "meters";
   /** Display unit for speeds (data stays canonical mph). */
   displaySpeed: "mph" | "ms";
+  /** Confidence-interval method for the per-club mean: t-interval or percentile bootstrap. */
+  ciMethod: "t" | "bootstrap";
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -109,4 +111,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   trendDeviationSE: 1.5,
   displayDistance: "yards",
   displaySpeed: "mph",
+  ciMethod: "t",
 };

@@ -47,6 +47,13 @@ drop data**.
 - The CI **half-width is the "± yards"** you see. It shrinks as your sample grows — this is
   the visual proof that more shots = a more trustworthy number.
 - A CI is undefined for n < 2 and shown as `—`.
+- **Optional percentile bootstrap.** Carry is right-skewed, so the t-interval's normal-mean
+  assumption is weakest for small/skewed samples — exactly when it matters. Settings → *CI
+  method* switches to a **percentile bootstrap** ([`bootstrap.ts`](./src/lib/stats/bootstrap.ts)):
+  resample the shots with replacement 2,000× (seeded, so it's reproducible), recompute the mean
+  each time, and take the 2.5/97.5 percentiles. It makes no distributional assumption and yields
+  an *asymmetric* interval (the club detail shows the real lower–upper bounds, since `±` would
+  hide the asymmetry). The t-interval stays the default.
 
 ### Shots-needed estimate
 

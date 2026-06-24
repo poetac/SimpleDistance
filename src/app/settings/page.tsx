@@ -202,7 +202,23 @@ export default function SettingsPage() {
               }
             />
           </label>
+
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-600">CI method</span>
+            <select
+              className="input"
+              value={local.ciMethod}
+              onChange={(e) => commit({ ciMethod: e.target.value as "t" | "bootstrap" })}
+            >
+              <option value="t">t-interval</option>
+              <option value="bootstrap">Bootstrap</option>
+            </select>
+          </label>
         </div>
+        <p className="text-xs text-slate-500">
+          The t-interval assumes a roughly normal mean; the percentile bootstrap makes no
+          distributional assumption and handles skewed/small samples more honestly.
+        </p>
         <p className="text-xs text-slate-500">
           Outlier exclusion never deletes data — excluded shots are only dropped
           from the active statistics and counted in the dashboard.

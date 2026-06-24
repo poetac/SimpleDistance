@@ -9,6 +9,7 @@ import {
   median,
   trimmedMean,
   meanConfidenceInterval,
+  bootstrapCI,
   shotsNeededForHalfWidth,
   classifyAdequacy,
   analyzeGapping,
@@ -117,7 +118,10 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     totalExcluded += excludedCount;
     cleanShotsByClub.set(club, cleanShots);
 
-    const ci = meanConfidenceInterval(cleanValues);
+    const ci =
+      settings.ciMethod === "bootstrap"
+        ? bootstrapCI(cleanValues, { statistic: "mean" })
+        : meanConfidenceInterval(cleanValues);
     const need = shotsNeededForHalfWidth(
       cleanValues,
       settings.targetCiHalfWidthYards,
