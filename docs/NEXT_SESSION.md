@@ -104,6 +104,16 @@ and analysis modules. CI runs typecheck + lint + test + build.
 - **Display-unit toggle** (yards/meters, mph/m·s) — a `Formatter` threaded through every engine
   prose generator and all UI numbers/charts; data stays canonical. `src/lib/format.ts`.
 
+### Note: Playwright E2E smoke (deferred — environment-blocked)
+A real-browser E2E smoke was attempted but the sandbox's network policy blocks Playwright's
+browser-binary CDN (separate from npm), so it can't be installed or verified here. The jsdom
+integration tests (`src/app/page.test.tsx`, `src/components/*.test.tsx`) already render the real
+Dashboard/Optimize/import flow against seeded IndexedDB, covering the data→analysis→render path.
+A future session with open network can add `@playwright/test`, a chromium install, a `webServer`
+config pointing at `npm run dev`, and a smoke spec (load dashboard → navigate to /optimize →
+toggle meters in settings → assert unit changes), wired as a **separate** CI job so it doesn't
+slow the unit run.
+
 ### Remaining ideas
 
 ### 1. Session/round metadata
