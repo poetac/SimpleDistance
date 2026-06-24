@@ -10,6 +10,7 @@ import { AdequacyBadge, TrendBadge, fmt } from "@/components/badges";
 import { mean as avg } from "@/lib/stats/descriptive";
 import { clubLabel } from "@/lib/domain/clubs";
 import { usePageTitle } from "@/components/usePageTitle";
+import { useFormatter } from "@/components/useFormatter";
 import { classifyExclusions, type ExclusionReason } from "@/lib/exclusion";
 
 export default function ClubDetail() {
@@ -19,6 +20,7 @@ export default function ClubDetail() {
   );
   usePageTitle(clubLabel(clubId));
   const { loading, analysis, settings, saveShot } = useData();
+  const f = useFormatter();
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
   const club = analysis?.clubs.find((c) => c.club === clubId);
@@ -62,13 +64,13 @@ export default function ClubDetail() {
 
       {/* Summary stat cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label={`Mean ${metricLabel}`} value={`${fmt(club.mean, 1)} yds`} />
-        <Stat label="Median" value={`${fmt(club.median, 1)} yds`} />
+        <Stat label={`Mean ${metricLabel}`} value={f.dist(club.mean, 1)} />
+        <Stat label="Median" value={f.dist(club.median, 1)} />
         <Stat
           label="95% CI"
           value={
             Number.isFinite(club.ci.halfWidth)
-              ? `±${fmt(club.ci.halfWidth, 1)} yds`
+              ? `±${f.dist(club.ci.halfWidth, 1)}`
               : "—"
           }
         />
@@ -88,7 +90,7 @@ export default function ClubDetail() {
         <p className="mt-1 text-sm text-slate-600">{club.trend.message}</p>
         {club.shotsNeeded.additionalNeeded > 0 && (
           <p className="mt-1 text-sm text-slate-500">
-            To reach ±{settings.targetCiHalfWidthYards} yds, collect about{" "}
+            To reach ±{f.dist(settings.targetCiHalfWidthYards)}, collect about{" "}
             <strong>{club.shotsNeeded.additionalNeeded}</strong> more clean shots
             (≈{club.shotsNeeded.totalNeeded} total).
           </p>
@@ -100,7 +102,7 @@ export default function ClubDetail() {
         <section className="card p-4">
           <h2 className="mb-1 font-semibold">Carry distribution</h2>
           <p className="mb-3 text-sm text-slate-500">
-            Trimmed mean {fmt(club.trimmedMean, 1)} yds — robust to mishits.
+            Trimmed mean {f.dist(club.trimmedMean, 1)} — robust to mishits.
           </p>
           <DistributionChart values={club.metricValues} />
         </section>
@@ -119,7 +121,7 @@ export default function ClubDetail() {
         <h2 className="mb-1 font-semibold">Dispersion (shot pattern)</h2>
         {Number.isFinite(avgSide) ? (
           <p className="mb-3 text-sm text-slate-600">
-            Average side: <strong>{fmt(Math.abs(avgSide), 1)} yds</strong>{" "}
+            Average side: <strong>{f.dist(Math.abs(avgSide), 1)}</strong>{" "}
             {avgSide >= 0 ? "right" : "left"} of target across {sideValues.length}{" "}
             shots with side data.
           </p>
@@ -130,13 +132,13 @@ export default function ClubDetail() {
         )}
         <div className="mb-3 flex flex-wrap gap-3 text-sm">
           {d.sideSd != null && (
-            <DispChip label="Side SD" value={`±${fmt(d.sideSd, 1)} yds`} />
+            <DispChip label="Side SD" value={`±${f.dist(d.sideSd, 1)}`} />
           )}
           {d.p75AbsSide != null && (
-            <DispChip label="75% within" value={`${fmt(d.p75AbsSide, 1)} yds`} />
+            <DispChip label="75% within" value={f.dist(d.p75AbsSide, 1)} />
           )}
           {d.carrySd != null && (
-            <DispChip label="Carry SD" value={`±${fmt(d.carrySd, 1)} yds`} />
+            <DispChip label="Carry SD" value={`±${f.dist(d.carrySd, 1)}`} />
           )}
           {d.ballSpeedCv != null && (
             <DispChip
@@ -169,7 +171,7 @@ export default function ClubDetail() {
         <p className="text-sm text-slate-600">{club.stopping.note}</p>
         <div className="mt-3 flex flex-wrap gap-3 text-sm">
           {club.stopping.rollYardsMean != null && (
-            <DispChip label="Avg roll" value={`${fmt(club.stopping.rollYardsMean, 1)} yds`} />
+            <DispChip label="Avg roll" value={f.dist(club.stopping.rollYardsMean, 1)} />
           )}
           {club.stopping.descentAngleMean != null && (
             <DispChip
@@ -236,7 +238,7 @@ export default function ClubDetail() {
             <thead className="sticky top-0 bg-white">
               <tr>
                 <th scope="col">Session</th>
-                <th scope="col">Carry</th>
+                <th scope="col">Carry ({f.dUnit})</th>
                 <th scope="col">Status</th>
                 <th scope="col">In stats?</th>
               </tr>
@@ -248,7 +250,7 @@ export default function ClubDetail() {
                   className={e.excluded ? "text-slate-400" : ""}
                 >
                   <td>{e.shot.sessionId}</td>
-                  <td>{fmt(e.shot.carryYards ?? NaN, 1)}</td>
+                  <td>{e.shot.carryYards != null ? f.d(e.shot.carryYards, 1) : "—"}</td>
                   <td>
                     <ReasonBadge reason={e.reason} />
                   </td>

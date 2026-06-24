@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useData } from "@/components/DataProvider";
 import { usePageTitle } from "@/components/usePageTitle";
 import { clubLabel } from "@/lib/domain/clubs";
-import { fmt } from "@/components/badges";
+import { useFormatter } from "@/components/useFormatter";
 
 export default function OptimizePage() {
   usePageTitle("Optimize");
   const { loading, analysis } = useData();
+  const f = useFormatter();
 
   if (loading) return <p className="text-slate-500">Loading…</p>;
   if (!analysis || analysis.clubs.length === 0)
@@ -32,7 +33,7 @@ export default function OptimizePage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Bag optimizer</h1>
         <p className="text-sm text-slate-500">
-          An even <strong>{fmt(o.targetGapYards, 0)}-yd</strong> target ladder across your
+          An even <strong>{f.d(o.targetGapYards, 0)}-{f.dUnitAdj}</strong> target ladder across your
           scoring clubs, with anchors kept as-is. Targets are decision support — built only
           from clubs with a trustworthy sample.
         </p>
@@ -77,7 +78,7 @@ export default function OptimizePage() {
             {o.anchors.map((a) => (
               <span key={a.club} className="rounded-lg bg-slate-100 px-3 py-1.5">
                 <strong>{clubLabel(a.club)}</strong>{" "}
-                <span className="text-slate-500">{fmt(a.carry, 0)} yds</span>
+                <span className="text-slate-500">{f.dist(a.carry, 0)}</span>
               </span>
             ))}
           </div>
@@ -93,9 +94,9 @@ export default function OptimizePage() {
           </caption>
           <thead>
             <tr>
-              <th scope="col">Target carry</th>
+              <th scope="col">Target carry ({f.dUnit})</th>
               <th scope="col">Current club</th>
-              <th scope="col">Carry</th>
+              <th scope="col">Carry ({f.dUnit})</th>
               <th scope="col">Δ vs target</th>
               <th scope="col">Status</th>
               <th scope="col">Note</th>
@@ -107,12 +108,12 @@ export default function OptimizePage() {
                 key={i}
                 className={s.status === "gap" ? "bg-amber-50" : "hover:bg-slate-50"}
               >
-                <td className="font-semibold">{fmt(s.targetCarry, 0)} yds</td>
+                <td className="font-semibold">{f.d(s.targetCarry, 0)}</td>
                 <td>{s.currentClub ? clubLabel(s.currentClub) : "—"}</td>
-                <td>{s.currentCarry != null ? `${fmt(s.currentCarry, 0)}` : "—"}</td>
+                <td>{s.currentCarry != null ? f.d(s.currentCarry, 0) : "—"}</td>
                 <td className={s.status === "adjust" ? "font-semibold text-amber-700" : ""}>
                   {s.deviation != null
-                    ? `${s.deviation >= 0 ? "+" : ""}${fmt(s.deviation, 0)}`
+                    ? `${s.deviation >= 0 ? "+" : ""}${f.d(s.deviation, 0)}`
                     : "—"}
                 </td>
                 <td>
@@ -138,8 +139,8 @@ export default function OptimizePage() {
           <ul className="space-y-1 text-sm text-slate-600">
             {o.redundant.map((r, i) => (
               <li key={i}>
-                <strong>{clubLabel(r.club)}</strong> ({fmt(r.carry, 0)} yds) duplicates{" "}
-                {clubLabel(r.nearClub)} — within {fmt(r.gapYards, 0)} yds. Candidate to drop.
+                <strong>{clubLabel(r.club)}</strong> ({f.dist(r.carry, 0)}) duplicates{" "}
+                {clubLabel(r.nearClub)} — within {f.dist(r.gapYards, 0)}. Candidate to drop.
               </li>
             ))}
           </ul>

@@ -7,11 +7,13 @@ import { GappingChart } from "@/components/charts/GappingChart";
 import { AdequacyBadge, FlagBadge, TrendBadge, fmt } from "@/components/badges";
 import { Recommendations } from "@/components/Recommendations";
 import { usePageTitle } from "@/components/usePageTitle";
+import { useFormatter } from "@/components/useFormatter";
 import { analyzeBag } from "@/lib/analysis";
 
 export default function Dashboard() {
   usePageTitle("Dashboard");
   const { loading, analysis: fullAnalysis, settings, shots } = useData();
+  const f = useFormatter();
   const [session, setSession] = useState("");
 
   const sessions = useMemo(
@@ -110,7 +112,7 @@ export default function Dashboard() {
           <h2 className="font-semibold">Bag structure</h2>
           {Number.isFinite(analysis.bagAdvice.typicalGapYards) && (
             <span className="text-sm text-slate-500">
-              Typical gap ~{fmt(analysis.bagAdvice.typicalGapYards, 0)} yds
+              Typical gap ~{f.dist(analysis.bagAdvice.typicalGapYards, 0)}
             </span>
           )}
         </div>
@@ -152,10 +154,10 @@ export default function Dashboard() {
             <tr>
               <th scope="col">Club</th>
               <th scope="col">N</th>
-              <th scope="col">Mean</th>
-              <th scope="col">Median</th>
+              <th scope="col">Mean ({f.dUnit})</th>
+              <th scope="col">Median ({f.dUnit})</th>
               <th scope="col">95% CI</th>
-              <th scope="col">Gap</th>
+              <th scope="col">Gap ({f.dUnit})</th>
               <th scope="col">Sample</th>
               <th scope="col">Trend</th>
               <th scope="col">Flags</th>
@@ -181,15 +183,15 @@ export default function Dashboard() {
                       </span>
                     )}
                   </td>
-                  <td>{fmt(c.mean, 1)}</td>
-                  <td>{fmt(c.median, 1)}</td>
+                  <td>{f.d(c.mean, 1)}</td>
+                  <td>{f.d(c.median, 1)}</td>
                   <td className="text-slate-500">
                     {Number.isFinite(c.ci.halfWidth)
-                      ? `±${fmt(c.ci.halfWidth, 1)}`
+                      ? `±${f.d(c.ci.halfWidth, 1)}`
                       : "—"}
                   </td>
                   <td>
-                    {row?.gapToLonger != null ? `${fmt(row.gapToLonger, 0)}` : "—"}
+                    {row?.gapToLonger != null ? `${f.d(row.gapToLonger, 0)}` : "—"}
                   </td>
                   <td>
                     <AdequacyBadge level={c.adequacy.level} />

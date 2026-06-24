@@ -9,6 +9,7 @@ import { clubLabel, clubOrderIndex } from "./domain/clubs";
 import { meanConfidenceInterval } from "./stats/confidence";
 import { cleanValues } from "./exclusion";
 import { MIN_SHOTS_LOW_CONFIDENCE } from "./stats/constants";
+import { formatterFromSettings } from "./format";
 
 export interface ClubSessionDelta {
   club: ClubId;
@@ -56,6 +57,7 @@ export function diffLatestSession(
   settings: AppSettings,
   envBySession?: Record<string, string>,
 ): SessionDiff | null {
+  const fmt = formatterFromSettings(settings);
   const sessions = orderSessions(shots);
   if (sessions.length < 2) return null;
 
@@ -111,14 +113,14 @@ export function diffLatestSession(
     const withinNoise = Math.abs(deltaYards) <= combined;
 
     const dir = deltaYards >= 0 ? "longer" : "shorter";
-    const mag = Math.abs(deltaYards).toFixed(1);
+    const mag = fmt.dist(Math.abs(deltaYards), 1);
     let note: string;
     if (insufficient) {
       note = `Not enough clean shots to compare ${clubLabel(club)} reliably (this session ${latestVals.length}, baseline ${baselineVals.length}).`;
     } else if (withinNoise) {
-      note = `${mag} yds ${dir} than baseline — within normal variation, no real change.`;
+      note = `${mag} ${dir} than baseline — within normal variation, no real change.`;
     } else {
-      note = `${mag} yds ${dir} than baseline — outside its usual range; worth watching.`;
+      note = `${mag} ${dir} than baseline — outside its usual range; worth watching.`;
     }
 
     return {

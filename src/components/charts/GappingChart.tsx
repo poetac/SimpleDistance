@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import type { ClubAnalysis } from "@/lib/analysis";
 import type { GapAnalysis } from "@/lib/stats/gapping";
+import { useFormatter } from "@/components/useFormatter";
 
 const COLORS = {
   ok: "#2f9e54",
@@ -28,16 +29,17 @@ export function GappingChart({
   clubs: ClubAnalysis[];
   gapping: GapAnalysis;
 }) {
+  const f = useFormatter();
   const flagByClub = new Map(
-    gapping.rows.map((r) => [r.club, r.flags.find((f) => f !== "ok") ?? "ok"]),
+    gapping.rows.map((r) => [r.club, r.flags.find((fl) => fl !== "ok") ?? "ok"]),
   );
 
   const data = clubs
     .filter((c) => Number.isFinite(c.mean))
     .map((c) => ({
       club: c.club,
-      carry: Number(c.mean.toFixed(1)),
-      err: Number.isFinite(c.ci.halfWidth) ? Number(c.ci.halfWidth.toFixed(1)) : 0,
+      carry: Number(f.dVal(c.mean).toFixed(1)),
+      err: Number.isFinite(c.ci.halfWidth) ? Number(f.dVal(c.ci.halfWidth).toFixed(1)) : 0,
       flag: flagByClub.get(c.club) ?? "ok",
     }));
 
@@ -47,7 +49,7 @@ export function GappingChart({
   const flagged = data.filter((d) => d.flag !== "ok");
   const summary =
     `Carry distance per club: ` +
-    data.map((d) => `${d.club} ${d.carry} yards`).join(", ") +
+    data.map((d) => `${d.club} ${d.carry} ${f.dUnit}`).join(", ") +
     (flagged.length
       ? `. Flagged: ${flagged.map((d) => `${d.club} (${d.flag})`).join(", ")}.`
       : ". No gapping issues flagged.");
@@ -62,7 +64,7 @@ export function GappingChart({
             <YAxis
               tick={{ fontSize: 12 }}
               label={{
-                value: "Carry (yds)",
+                value: `Carry (${f.dUnit})`,
                 angle: -90,
                 position: "insideLeft",
                 style: { fontSize: 12, fill: "#64748b" },
@@ -72,7 +74,7 @@ export function GappingChart({
               formatter={(v: number, name, item) =>
                 name === "carry"
                   ? [
-                      `${v} yds${item?.payload?.flag && item.payload.flag !== "ok" ? ` — ${item.payload.flag}` : ""}`,
+                      `${v} ${f.dUnit}${item?.payload?.flag && item.payload.flag !== "ok" ? ` — ${item.payload.flag}` : ""}`,
                       "Carry",
                     ]
                   : [v, name]

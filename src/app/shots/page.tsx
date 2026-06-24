@@ -6,6 +6,7 @@ import { normalizeClub, clubLabel, clubOrderIndex } from "@/lib/domain/clubs";
 import type { Shot } from "@/lib/domain/types";
 import { fmt } from "@/components/badges";
 import { usePageTitle } from "@/components/usePageTitle";
+import { useFormatter } from "@/components/useFormatter";
 
 const EMPTY = {
   club: "",
@@ -22,6 +23,7 @@ const EMPTY = {
 export default function ShotsPage() {
   usePageTitle("Shots");
   const { loading, shots, addShots, saveShot, removeShot, aliases } = useData();
+  const f = useFormatter();
   const [form, setForm] = useState({ ...EMPTY });
   const [editing, setEditing] = useState<Shot | null>(null);
   const [filter, setFilter] = useState("");
@@ -30,16 +32,18 @@ export default function ShotsPage() {
 
   function startEdit(s: Shot) {
     setEditing(s);
+    const dStr = (v?: number) => (v != null ? f.dVal(v).toFixed(1) : "");
+    const sStr = (v?: number) => (v != null ? f.sVal(v).toFixed(1) : "");
     setForm({
       club: s.rawClub ?? s.club,
       sessionId: s.sessionId,
-      carryYards: s.carryYards?.toString() ?? "",
-      totalYards: s.totalYards?.toString() ?? "",
-      ballSpeedMph: s.ballSpeedMph?.toString() ?? "",
-      clubSpeedMph: s.clubSpeedMph?.toString() ?? "",
+      carryYards: dStr(s.carryYards),
+      totalYards: dStr(s.totalYards),
+      ballSpeedMph: sStr(s.ballSpeedMph),
+      clubSpeedMph: sStr(s.clubSpeedMph),
       spinRpm: s.spinRpm?.toString() ?? "",
       launchAngleDeg: s.launchAngleDeg?.toString() ?? "",
-      sideYards: s.sideYards?.toString() ?? "",
+      sideYards: dStr(s.sideYards),
     });
     setMsg("");
     // Move focus to the form so keyboard/SR users land on the edit fields.
@@ -70,8 +74,17 @@ export default function ShotsPage() {
       setMsg("Enter a recognizable club (e.g. 7i, PW, 56).");
       return;
     }
-    const carry = num(form.carryYards);
-    const total = num(form.totalYards);
+    // Form inputs are in the DISPLAY unit; convert back to canonical yards/mph.
+    const dNum = (v: string) => {
+      const n = num(v);
+      return n != null ? f.toYards(n) : undefined;
+    };
+    const sNum = (v: string) => {
+      const n = num(v);
+      return n != null ? f.toMph(n) : undefined;
+    };
+    const carry = dNum(form.carryYards);
+    const total = dNum(form.totalYards);
     if (carry == null && total == null) {
       setMsg("Enter at least a carry or total distance.");
       return;
@@ -84,11 +97,11 @@ export default function ShotsPage() {
       timestamp: editing?.timestamp ?? new Date().toISOString(),
       carryYards: carry,
       totalYards: total,
-      ballSpeedMph: num(form.ballSpeedMph),
-      clubSpeedMph: num(form.clubSpeedMph),
+      ballSpeedMph: sNum(form.ballSpeedMph),
+      clubSpeedMph: sNum(form.clubSpeedMph),
       spinRpm: num(form.spinRpm),
       launchAngleDeg: num(form.launchAngleDeg),
-      sideYards: num(form.sideYards),
+      sideYards: dNum(form.sideYards),
       // preserve fields not exposed in the form when editing
       launchDirectionDeg: editing?.launchDirectionDeg,
       apexFt: editing?.apexFt,
@@ -154,22 +167,22 @@ export default function ShotsPage() {
               placeholder="2026-06-23"
             />
           </Field>
-          <Field label="Carry (yds)">
+          <Field label={`Carry (${f.dUnit})`}>
             <input className="input" value={form.carryYards} onChange={(e) => setForm({ ...form, carryYards: e.target.value })} inputMode="decimal" />
           </Field>
-          <Field label="Total (yds)">
+          <Field label={`Total (${f.dUnit})`}>
             <input className="input" value={form.totalYards} onChange={(e) => setForm({ ...form, totalYards: e.target.value })} inputMode="decimal" />
           </Field>
-          <Field label="Ball speed (mph)">
+          <Field label={`Ball speed (${f.sUnit})`}>
             <input className="input" value={form.ballSpeedMph} onChange={(e) => setForm({ ...form, ballSpeedMph: e.target.value })} inputMode="decimal" />
           </Field>
-          <Field label="Club speed (mph)">
+          <Field label={`Club speed (${f.sUnit})`}>
             <input className="input" value={form.clubSpeedMph} onChange={(e) => setForm({ ...form, clubSpeedMph: e.target.value })} inputMode="decimal" />
           </Field>
           <Field label="Spin (rpm)">
             <input className="input" value={form.spinRpm} onChange={(e) => setForm({ ...form, spinRpm: e.target.value })} inputMode="decimal" />
           </Field>
-          <Field label="Side (yds, + right)">
+          <Field label={`Side (${f.dUnit}, + right)`}>
             <input className="input" value={form.sideYards} onChange={(e) => setForm({ ...form, sideYards: e.target.value })} inputMode="decimal" />
           </Field>
           <div className="flex items-end gap-2">
@@ -211,11 +224,11 @@ export default function ShotsPage() {
               <tr>
                 <th scope="col">Club</th>
                 <th scope="col">Session</th>
-                <th scope="col">Carry</th>
-                <th scope="col">Total</th>
-                <th scope="col">Ball</th>
+                <th scope="col">Carry ({f.dUnit})</th>
+                <th scope="col">Total ({f.dUnit})</th>
+                <th scope="col">Ball ({f.sUnit})</th>
                 <th scope="col">Spin</th>
-                <th scope="col">Side</th>
+                <th scope="col">Side ({f.dUnit})</th>
                 <th scope="col">Src</th>
                 <th scope="col">Stats</th>
                 <th scope="col">
@@ -233,11 +246,11 @@ export default function ShotsPage() {
                 >
                   <td className="font-medium">{clubLabel(s.club)}</td>
                   <td className="text-slate-500">{s.sessionId}</td>
-                  <td>{fmt(s.carryYards ?? NaN, 1)}</td>
-                  <td>{fmt(s.totalYards ?? NaN, 1)}</td>
-                  <td>{fmt(s.ballSpeedMph ?? NaN, 1)}</td>
+                  <td>{s.carryYards != null ? f.d(s.carryYards, 1) : "—"}</td>
+                  <td>{s.totalYards != null ? f.d(s.totalYards, 1) : "—"}</td>
+                  <td>{s.ballSpeedMph != null ? f.sVal(s.ballSpeedMph).toFixed(1) : "—"}</td>
                   <td>{s.spinRpm ?? "—"}</td>
-                  <td>{fmt(s.sideYards ?? NaN, 1)}</td>
+                  <td>{s.sideYards != null ? f.d(s.sideYards, 1) : "—"}</td>
                   <td className="text-xs text-slate-500">{s.source}</td>
                   <td>
                     <label className="flex items-center gap-1 text-xs text-slate-500 no-underline">

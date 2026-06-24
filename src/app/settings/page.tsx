@@ -118,6 +118,32 @@ export default function SettingsPage() {
             </select>
           </label>
 
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-600">Distance unit</span>
+            <select
+              className="input"
+              value={local.displayDistance}
+              onChange={(e) =>
+                commit({ displayDistance: e.target.value as "yards" | "meters" })
+              }
+            >
+              <option value="yards">Yards</option>
+              <option value="meters">Meters</option>
+            </select>
+          </label>
+
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-600">Speed unit</span>
+            <select
+              className="input"
+              value={local.displaySpeed}
+              onChange={(e) => commit({ displaySpeed: e.target.value as "mph" | "ms" })}
+            >
+              <option value="mph">mph</option>
+              <option value="ms">m/s</option>
+            </select>
+          </label>
+
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"

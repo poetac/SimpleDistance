@@ -94,6 +94,10 @@ export interface AppSettings {
   trendMinSessions: number;
   /** Per-session deviation size (in standard errors) to count as "strong". */
   trendDeviationSE: number;
+  /** Display unit for distances (data stays canonical yards). */
+  displayDistance: "yards" | "meters";
+  /** Display unit for speeds (data stays canonical mph). */
+  displaySpeed: "mph" | "ms";
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -103,4 +107,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // Defaults mirror the named constants in stats/constants.ts.
   trendMinSessions: 2,
   trendDeviationSE: 1.5,
+  displayDistance: "yards",
+  displaySpeed: "mph",
 };

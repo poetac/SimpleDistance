@@ -14,6 +14,7 @@ import type { ClubId } from "./domain/types";
 import { clubLabel, clubOrderIndex, categoryOf, type ClubCategory } from "./domain/clubs";
 import { median } from "./stats/descriptive";
 import { OVERLAP_GAP_YARDS, HOLE_GAP_YARDS } from "./stats/constants";
+import { YARDS, type Formatter } from "./format";
 
 /** A consecutive gap that is this multiple of the typical gap is a hole. */
 export const HOLE_FACTOR = 1.6;
@@ -61,7 +62,7 @@ function reliable(c: BagClub): boolean {
  * on a club whose carry isn't yet statistically reliable is flagged `tentative`
  * so a small, noisy sample can't masquerade as a structural problem.
  */
-export function adviseBag(input: BagClub[]): BagAdvice {
+export function adviseBag(input: BagClub[], fmt: Formatter = YARDS): BagAdvice {
   const clubs = input
     .filter((c) => Number.isFinite(c.carry))
     .sort((a, b) => clubOrderIndex(a.club) - clubOrderIndex(b.club));
@@ -108,7 +109,7 @@ export function adviseBag(input: BagClub[]): BagAdvice {
         priority: tentative ? 2 : 1,
         tentative,
         text:
-          `${clubLabel(longer.club)} carries ${Math.abs(gap).toFixed(0)} yds shorter than ${clubLabel(shorter.club)} — an inversion. Have its loft/lie checked or confirm the gap with more shots.` +
+          `${clubLabel(longer.club)} carries ${fmt.dist(Math.abs(gap))} shorter than ${clubLabel(shorter.club)} — an inversion. Have its loft/lie checked or confirm the gap with more shots.` +
           tentativeNote(longer, shorter),
       });
       continue;
@@ -129,7 +130,7 @@ export function adviseBag(input: BagClub[]): BagAdvice {
         tentative,
         suggestedCarry,
         text:
-          `${gap.toFixed(0)}-yd gap between ${clubLabel(longer.club)} and ${clubLabel(shorter.club)} (typical gap ~${target.toFixed(0)} yds). Consider ${fits === 1 ? "a club" : `${fits} clubs`} carrying ~${suggestedCarry.toFixed(0)} yds — a loft tweak or an added club would fill it.` +
+          `${fmt.d(gap)}-${fmt.dUnitAdj} gap between ${clubLabel(longer.club)} and ${clubLabel(shorter.club)} (typical gap ~${fmt.dist(target)}). Consider ${fits === 1 ? "a club" : `${fits} clubs`} carrying ~${fmt.dist(suggestedCarry)} — a loft tweak or an added club would fill it.` +
           tentativeNote(longer, shorter),
       });
     } else if (gap < Math.min(OVERLAP_GAP_YARDS, target * OVERLAP_FACTOR)) {
@@ -139,7 +140,7 @@ export function adviseBag(input: BagClub[]): BagAdvice {
         priority: tentative ? 4 : 3,
         tentative,
         text:
-          `${clubLabel(longer.club)} and ${clubLabel(shorter.club)} carry within ${gap.toFixed(0)} yds (typical gap ~${target.toFixed(0)} yds) — they overlap. One may be redundant; widening the loft gap would spread them out.` +
+          `${clubLabel(longer.club)} and ${clubLabel(shorter.club)} carry within ${fmt.dist(gap)} (typical gap ~${fmt.dist(target)}) — they overlap. One may be redundant; widening the loft gap would spread them out.` +
           tentativeNote(longer, shorter),
       });
     }

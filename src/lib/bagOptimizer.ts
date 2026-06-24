@@ -17,6 +17,7 @@
 import type { ClubId } from "./domain/types";
 import { clubLabel, clubOrderIndex, categoryOf, type ClubCategory } from "./domain/clubs";
 import { median } from "./stats/descriptive";
+import { YARDS, type Formatter } from "./format";
 
 export const DEFAULT_FULL_SWING_BUDGET = 13; // 14 clubs minus a putter
 
@@ -31,6 +32,8 @@ export interface OptimizerOptions {
   targetGapYards?: number;
   /** Full-swing club budget (excludes the putter). */
   budget?: number;
+  /** Display formatter for note/summary prose (defaults to yards). */
+  fmt?: Formatter;
 }
 
 export type SlotStatus = "matched" | "adjust" | "gap";
@@ -75,6 +78,7 @@ export function optimizeBag(
   opts: OptimizerOptions = {},
 ): BagOptimization {
   const budget = opts.budget ?? DEFAULT_FULL_SWING_BUDGET;
+  const fmt = opts.fmt ?? YARDS;
   const clubs = input
     .filter((c) => Number.isFinite(c.carry))
     .sort((a, b) => clubOrderIndex(a.club) - clubOrderIndex(b.club));
@@ -138,7 +142,7 @@ export function optimizeBag(
       ladder.push({
         targetCarry,
         status: "gap",
-        note: `No club near ${targetCarry.toFixed(0)} yds — add a club carrying ~${targetCarry.toFixed(0)} yds.`,
+        note: `No club near ${fmt.dist(targetCarry)} — add a club carrying ~${fmt.dist(targetCarry)}.`,
       });
       return;
     }
@@ -153,8 +157,8 @@ export function optimizeBag(
       deviation,
       note:
         status === "matched"
-          ? `${clubLabel(keep.club)} fits this slot (${keep.carry.toFixed(0)} yds).`
-          : `${clubLabel(keep.club)} carries ${keep.carry.toFixed(0)} yds, ${Math.abs(deviation).toFixed(0)} ${deviation > 0 ? "long" : "short"} of the ${targetCarry.toFixed(0)}-yd slot — a loft tweak would center it.`,
+          ? `${clubLabel(keep.club)} fits this slot (${fmt.dist(keep.carry)}).`
+          : `${clubLabel(keep.club)} carries ${fmt.dist(keep.carry)}, ${fmt.d(Math.abs(deviation))} ${fmt.dUnitAdj} ${deviation > 0 ? "long" : "short"} of the ${fmt.d(targetCarry)}-${fmt.dUnitAdj} slot — a loft tweak would center it.`,
     });
     for (const extra of here.slice(1)) {
       redundant.push({
@@ -173,14 +177,14 @@ export function optimizeBag(
 
   const summary: string[] = [];
   summary.push(
-    `Scoring clubs span ${bottom.toFixed(0)}–${top.toFixed(0)} yds; at a ${targetGapYards.toFixed(0)}-yd target that's ${slotCount} evenly-spaced slots.`,
+    `Scoring clubs span ${fmt.d(bottom)}–${fmt.dist(top)}; at a ${fmt.d(targetGapYards)}-${fmt.dUnitAdj} target that's ${slotCount} evenly-spaced slots.`,
   );
   for (const g of gapSlots) {
-    summary.push(`Add a club carrying ~${g.targetCarry.toFixed(0)} yds to fill a gap.`);
+    summary.push(`Add a club carrying ~${fmt.dist(g.targetCarry)} to fill a gap.`);
   }
   for (const r of redundant) {
     summary.push(
-      `${clubLabel(r.club)} duplicates ${clubLabel(r.nearClub)} (within ${r.gapYards.toFixed(0)} yds) — a candidate to drop.`,
+      `${clubLabel(r.club)} duplicates ${clubLabel(r.nearClub)} (within ${fmt.dist(r.gapYards)}) — a candidate to drop.`,
     );
   }
   const free = budget - proposedCount;

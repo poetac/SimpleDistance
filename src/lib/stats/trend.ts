@@ -15,6 +15,7 @@ import {
   TREND_MIN_SESSIONS,
   TREND_MIN_YARDS,
 } from "./constants";
+import { YARDS, type Formatter } from "../format";
 
 /** Clean carry values for one club in one session. */
 export interface ClubSessionStats {
@@ -90,6 +91,8 @@ export interface TrendOptions {
   minSessions?: number;
   deviationSE?: number;
   minYards?: number;
+  /** Display formatter for the message prose (defaults to yards). */
+  fmt?: Formatter;
 }
 
 export function classifyTrend(
@@ -100,6 +103,7 @@ export function classifyTrend(
   const minSessions = opts.minSessions ?? TREND_MIN_SESSIONS;
   const seThreshold = opts.deviationSE ?? TREND_DEVIATION_SE;
   const minYards = opts.minYards ?? TREND_MIN_YARDS;
+  const fmt = opts.fmt ?? YARDS;
 
   // Group by session.
   const bySession = new Map<string, ClubSessionStats[]>();
@@ -179,10 +183,10 @@ export function classifyTrend(
         : `Only ${sessionsConsidered} session(s) with enough shots — ${target} looks ${dirWord}, but that can't yet separate a real trend from noise. Collect more sessions.`;
   } else if (sessionsStrongAgreeing >= minSessions && direction !== "none") {
     classification = "real-trend";
-    message = `${target} consistently carries ${Math.abs(overallDeviationYards).toFixed(1)} yds ${direction} of its neighbor-interpolated expectation across ${sessionsStrongAgreeing} of ${sessionsConsidered} sessions — this is a real, persistent trend, not session noise.`;
+    message = `${target} consistently carries ${fmt.dist(Math.abs(overallDeviationYards), 1)} ${direction} of its neighbor-interpolated expectation across ${sessionsStrongAgreeing} of ${sessionsConsidered} sessions — this is a real, persistent trend, not session noise.`;
   } else {
     classification = "noise";
-    message = `${target}'s deviation (${overallDeviationYards >= 0 ? "+" : ""}${overallDeviationYards.toFixed(1)} yds vs expectation) does not persist strongly across sessions — most likely noise rather than a real trend.`;
+    message = `${target}'s deviation (${overallDeviationYards >= 0 ? "+" : ""}${fmt.dist(overallDeviationYards, 1)} vs expectation) does not persist strongly across sessions — most likely noise rather than a real trend.`;
   }
 
   return {

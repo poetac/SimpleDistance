@@ -4,6 +4,7 @@
 
 import { mean } from "./descriptive";
 import { SOFT_ROLL_FRACTION, HOT_ROLL_FRACTION } from "./constants";
+import { YARDS, type Formatter } from "../format";
 
 export type Landing = "soft" | "medium" | "hot" | "unknown";
 
@@ -16,6 +17,8 @@ export interface StoppingInput {
   total?: number[];
   /** True for irons/wedges, where a soft/hot verdict is meaningful. */
   scoringClub?: boolean;
+  /** Display formatter for the note prose (defaults to yards). */
+  fmt?: Formatter;
 }
 
 export interface StoppingStats {
@@ -51,13 +54,14 @@ export function stoppingStats(input: StoppingInput): StoppingStats {
           : "medium";
   }
 
+  const fmt = input.fmt ?? YARDS;
   let note: string;
   if (rollFraction == null && descentAngleMean == null) {
     note = "No roll or descent data available to judge stopping power.";
   } else if (!input.scoringClub) {
     note =
       rollYardsMean != null
-        ? `Releases ~${rollYardsMean.toFixed(0)} yds on average — expected for a long club.`
+        ? `Releases ~${fmt.dist(rollYardsMean)} on average — expected for a long club.`
         : `Descends at ~${descentAngleMean!.toFixed(0)}°.`;
   } else if (landing === "soft") {
     note = `Lands soft — only ~${(rollFraction! * 100).toFixed(0)}% of distance from roll. Good stopping power.`;

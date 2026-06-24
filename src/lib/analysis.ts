@@ -30,6 +30,7 @@ import { classifyExclusions } from "./exclusion";
 import { adviseBag, type BagAdvice } from "./bagAdvice";
 import { optimizeBag, type BagOptimization } from "./bagOptimizer";
 import { categoryOf } from "./domain/clubs";
+import { formatterFromSettings, type Formatter } from "./format";
 
 export interface ClubAnalysis {
   club: ClubId;
@@ -98,6 +99,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
 
   const clubs: ClubAnalysis[] = [];
   let totalExcluded = 0;
+  const fmt = formatterFromSettings(settings);
 
   // First pass: per-club clean values + outlier flags.
   const cleanShotsByClub = new Map<ClubId, Shot[]>();
@@ -142,6 +144,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       roll: rolls,
       total: numeric((s) => s.totalYards),
       scoringClub: cat === "iron" || cat === "wedge" || cat === "hybrid",
+      fmt,
     });
 
     clubs.push({
@@ -189,6 +192,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
   const trendOpts: TrendOptions = {
     minSessions: settings.trendMinSessions,
     deviationSE: settings.trendDeviationSE,
+    fmt,
   };
 
   for (const c of clubs) {
@@ -213,7 +217,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     const dev = Number.isFinite(c.trend.overallDeviationYards)
       ? c.trend.overallDeviationYards
       : 0;
-    c.hints = equipmentHints(targetSummary, neighborSummaries, dev);
+    c.hints = equipmentHints(targetSummary, neighborSummaries, dev, fmt);
   }
 
   // Gapping across the bag (only clubs with a usable mean).
@@ -231,6 +235,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       category: categoryOf(c.club),
       confidence: c.adequacy.level,
     })),
+    fmt,
   );
 
   // 14-club optimization from the reliable clubs (insufficient-sample clubs are
@@ -243,10 +248,11 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       targetGapYards: Number.isFinite(bagAdvice.typicalGapYards)
         ? bagAdvice.typicalGapYards
         : undefined,
+      fmt,
     },
   );
 
-  const recommendations = buildRecommendations(clubs, bagAdvice);
+  const recommendations = buildRecommendations(clubs, bagAdvice, fmt);
 
   return {
     clubs: clubs.sort(
@@ -265,6 +271,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
 function buildRecommendations(
   clubs: ClubAnalysis[],
   advice: BagAdvice,
+  fmt: Formatter,
 ): Recommendation[] {
   const recs: Recommendation[] = [];
   const byClub = new Map(clubs.map((c) => [c.club, c]));
@@ -304,7 +311,7 @@ function buildRecommendations(
         club: c.club,
         category: "trend",
         text:
-          `${c.label} shows a real, persistent ${c.trend.direction} trend (${Math.abs(c.trend.overallDeviationYards).toFixed(0)} yds vs neighbors). ` +
+          `${c.label} shows a real, persistent ${c.trend.direction} trend (${fmt.dist(Math.abs(c.trend.overallDeviationYards))} vs neighbors). ` +
           (hint ? hint.hypothesis : "Worth investigating equipment vs swing."),
       });
     }

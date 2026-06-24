@@ -8,6 +8,7 @@
 import type { ClubId } from "../domain/types";
 import { mean } from "./descriptive";
 import { BALL_SPEED_INLINE_PCT, SPIN_ANOMALY_PCT } from "./constants";
+import { YARDS, type Formatter } from "../format";
 
 export interface ClubMetricSummary {
   club: ClubId;
@@ -48,6 +49,7 @@ export function equipmentHints(
   target: ClubMetricSummary,
   neighbors: ClubMetricSummary[],
   carryDeviationYards: number,
+  fmt: Formatter = YARDS,
 ): EquipmentHint[] {
   const hints: EquipmentHint[] = [];
   const isShort = carryDeviationYards > 0;
@@ -67,7 +69,7 @@ export function equipmentHints(
         leaning: "equipment",
         confidence: "moderate",
         hypothesis: `Carry is short even though ball speed is normal — consistent with a launch/spin or loft issue rather than a swing-speed problem. Worth a loft/lie check.`,
-        evidence: `Ball speed ${target.ballSpeed.toFixed(1)} mph is within ${(BALL_SPEED_INLINE_PCT * 100).toFixed(0)}% of neighbors (~${nbBallSpeed.toFixed(1)} mph), so the club is delivering speed but not converting it to distance.`,
+        evidence: `Ball speed ${fmt.speed(target.ballSpeed, 1)} is within ${(BALL_SPEED_INLINE_PCT * 100).toFixed(0)}% of neighbors (~${fmt.speed(nbBallSpeed, 1)}), so the club is delivering speed but not converting it to distance.`,
       });
     } else if (isShort && rel < -BALL_SPEED_INLINE_PCT) {
       hints.push({
@@ -75,7 +77,7 @@ export function equipmentHints(
         leaning: "swing",
         confidence: "moderate",
         hypothesis: `Carry is short and so is ball speed — points toward contact/strike or swing-speed with this club more than equipment.`,
-        evidence: `Ball speed ${target.ballSpeed.toFixed(1)} mph is ${(Math.abs(rel) * 100).toFixed(0)}% below neighbors (~${nbBallSpeed.toFixed(1)} mph).`,
+        evidence: `Ball speed ${fmt.speed(target.ballSpeed, 1)} is ${(Math.abs(rel) * 100).toFixed(0)}% below neighbors (~${fmt.speed(nbBallSpeed, 1)}).`,
       });
     } else if (isLong && rel > BALL_SPEED_INLINE_PCT) {
       hints.push({
@@ -83,7 +85,7 @@ export function equipmentHints(
         leaning: "equipment",
         confidence: "weak",
         hypothesis: `Carry and ball speed both run high — could be a strong (de-lofted) setup on this club. Worth confirming loft.`,
-        evidence: `Ball speed ${target.ballSpeed.toFixed(1)} mph is ${(rel * 100).toFixed(0)}% above neighbors (~${nbBallSpeed.toFixed(1)} mph).`,
+        evidence: `Ball speed ${fmt.speed(target.ballSpeed, 1)} is ${(rel * 100).toFixed(0)}% above neighbors (~${fmt.speed(nbBallSpeed, 1)}).`,
       });
     }
   }

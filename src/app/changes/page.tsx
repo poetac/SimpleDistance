@@ -5,11 +5,12 @@ import { useMemo } from "react";
 import { useData } from "@/components/DataProvider";
 import { usePageTitle } from "@/components/usePageTitle";
 import { diffLatestSession } from "@/lib/sessionDiff";
-import { fmt } from "@/components/badges";
+import { useFormatter } from "@/components/useFormatter";
 
 export default function ChangesPage() {
   usePageTitle("Changes");
   const { loading, shots, settings, sessionMeta } = useData();
+  const f = useFormatter();
 
   const envBySession = useMemo(() => {
     const m: Record<string, string> = {};
@@ -97,9 +98,9 @@ export default function ChangesPage() {
           <thead>
             <tr>
               <th scope="col">Club</th>
-              <th scope="col">This session</th>
-              <th scope="col">Baseline</th>
-              <th scope="col">Change</th>
+              <th scope="col">This session ({f.dUnit})</th>
+              <th scope="col">Baseline ({f.dUnit})</th>
+              <th scope="col">Change ({f.dUnit})</th>
               <th scope="col">Read</th>
             </tr>
           </thead>
@@ -108,11 +109,11 @@ export default function ChangesPage() {
               <tr key={r.club} className="hover:bg-slate-50">
                 <td className="font-semibold">{r.label}</td>
                 <td>
-                  {fmt(r.latestMean, 1)}{" "}
+                  {f.d(r.latestMean, 1)}{" "}
                   <span className="text-xs text-slate-500">(n={r.latestN})</span>
                 </td>
                 <td>
-                  {fmt(r.baselineMean, 1)}{" "}
+                  {f.d(r.baselineMean, 1)}{" "}
                   <span className="text-xs text-slate-500">(n={r.baselineN})</span>
                 </td>
                 <td
@@ -125,7 +126,7 @@ export default function ChangesPage() {
                   }
                 >
                   {r.deltaYards >= 0 ? "+" : ""}
-                  {fmt(r.deltaYards, 1)}
+                  {f.d(r.deltaYards, 1)}
                 </td>
                 <td>
                   {r.insufficient ? (

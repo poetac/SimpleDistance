@@ -11,13 +11,15 @@ import {
   YAxis,
 } from "recharts";
 import type { SessionDeviation } from "@/lib/stats/trend";
+import { useFormatter } from "@/components/useFormatter";
 
-/** Session-over-session observed vs expected carry. */
+/** Session-over-session observed vs expected carry (input is canonical yards). */
 export function SessionTrendChart({
   perSession,
 }: {
   perSession: SessionDeviation[];
 }) {
+  const f = useFormatter();
   if (perSession.length === 0)
     return (
       <p className="text-sm text-slate-500">
@@ -27,13 +29,13 @@ export function SessionTrendChart({
 
   const data = perSession.map((s, i) => ({
     session: s.sessionId.length > 10 ? `S${i + 1}` : s.sessionId,
-    observed: Number(s.observedMean.toFixed(1)),
-    expected: Number(s.expectedMean.toFixed(1)),
+    observed: Number(f.dVal(s.observedMean).toFixed(1)),
+    expected: Number(f.dVal(s.expectedMean).toFixed(1)),
   }));
 
   const summary =
     `Observed versus neighbor-expected carry per session: ` +
-    data.map((d) => `${d.session}: observed ${d.observed}, expected ${d.expected} yards`).join("; ") +
+    data.map((d) => `${d.session}: observed ${d.observed}, expected ${d.expected} ${f.dUnit}`).join("; ") +
     ".";
 
   return (
