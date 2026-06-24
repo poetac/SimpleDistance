@@ -42,6 +42,30 @@ describe("import robustness — delimiters, BOM, ragged rows", () => {
     expect(res.shots[1].totalYards).toBeCloseTo(132, 0);
   });
 
+  it("parses L/R side suffixes into signed yards (+ = right)", () => {
+    const res = parseAndTransform(
+      "Club,Carry,Side\n7 Iron,162,3.2 R\n7 Iron,160,4.1 L\n7 Iron,161,2.0",
+    );
+    expect(res.shots[0].sideYards).toBeCloseTo(3.2, 1);
+    expect(res.shots[1].sideYards).toBeCloseTo(-4.1, 1);
+    expect(res.shots[2].sideYards).toBeCloseTo(2.0, 1);
+  });
+
+  it("drops exact within-file duplicate rows", () => {
+    const res = parseAndTransform(
+      "Club,Carry,Ball Speed\n7 Iron,162,113\n7 Iron,162,113\n6 Iron,178,117",
+    );
+    expect(res.shots).toHaveLength(2);
+    expect(res.skipReasons.duplicate).toBe(1);
+  });
+
+  it("derives the session from a normalized timestamp", () => {
+    const res = parseAndTransform(
+      "Club,Carry,Date\n7 Iron,162,2026-05-18T10:00:00\n6 Iron,178,2026-05-18T10:01:00",
+    );
+    expect(res.shots[0].sessionId).toBe("2026-05-18");
+  });
+
   it("reports categorized skip reasons", () => {
     const res = parseAndTransform(
       "Club,Carry\n7 Iron,162\n,150\nbanana stick,140\nPW,\n",
@@ -50,6 +74,51 @@ describe("import robustness — delimiters, BOM, ragged rows", () => {
     expect(res.skipReasons.missingClub).toBe(1);
     expect(res.skipReasons.unrecognizedClub).toBe(1);
     expect(res.skipReasons.missingDistance).toBe(1);
+  });
+});
+
+describe("import fuzz / property test", () => {
+  function mulberry32(seed: number) {
+    let a = seed >>> 0;
+    return () => {
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rng = mulberry32(42);
+  const pick = <T,>(arr: T[]) => arr[Math.floor(rng() * arr.length)];
+  const clubs = ["7 Iron", "PW", "Driver", "56", "5i", "", "banana", "  ", "3-wood"];
+  const nums = ["162", "150,5", "-3", "3.2 R", "4 L", "", "abc", "1,234.5", "999999", "0"];
+
+  it("never throws and keeps shots + skipped == rows on random messy input", () => {
+    const headers = ["Club", "Carry", "Total", "Ball Speed", "Side", "Date"];
+    for (let iter = 0; iter < 200; iter++) {
+      const rows = Array.from({ length: Math.floor(rng() * 8) }, () => ({
+        Club: pick(clubs),
+        Carry: pick(nums),
+        Total: pick(nums),
+        "Ball Speed": pick(nums),
+        Side: pick(nums),
+        Date: pick(["2026-05-18", "1609459200", "junk", ""]),
+      }));
+      const { mapping } = autoDetectMapping(headers);
+      const res = rowsToShots({ headers, rows }, mapping, {
+        distanceUnit: "yards",
+        speedUnit: "mph",
+        source: "fuzz",
+      });
+      // Every row is either a shot or counted as skipped — exactly once.
+      expect(res.shots.length + res.rowsSkipped).toBe(rows.length);
+      // No shot has a negative carry/total (those are rejected).
+      for (const s of res.shots) {
+        expect((s.carryYards ?? 0) >= 0).toBe(true);
+        expect((s.totalYards ?? 0) >= 0).toBe(true);
+        expect(s.club).toBeTruthy();
+      }
+    }
   });
 });
 

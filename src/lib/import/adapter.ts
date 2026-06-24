@@ -34,7 +34,12 @@ export interface ImportResult {
   speedUnit: "mph" | "ms" | "kmh";
   /** Total rows skipped and why (for a clear quarantine report). */
   rowsSkipped?: number;
-  skipReasons?: { missingClub: number; unrecognizedClub: number; missingDistance: number };
+  skipReasons?: {
+    missingClub: number;
+    unrecognizedClub: number;
+    missingDistance: number;
+    duplicate: number;
+  };
   unmappedClubs?: string[];
 }
 
