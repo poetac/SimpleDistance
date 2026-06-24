@@ -9,6 +9,8 @@ import { Recommendations } from "@/components/Recommendations";
 import { usePageTitle } from "@/components/usePageTitle";
 import { useFormatter } from "@/components/useFormatter";
 import { analyzeBag } from "@/lib/analysis";
+import { buildBagReport } from "@/lib/report";
+import { downloadFile } from "@/lib/download";
 
 export default function Dashboard() {
   usePageTitle("Dashboard");
@@ -79,6 +81,18 @@ export default function Dashboard() {
               ))}
             </select>
           )}
+          <button
+            className="btn-ghost"
+            onClick={() =>
+              downloadFile(
+                `simpledistance-report-${new Date().toISOString().slice(0, 10)}.md`,
+                buildBagReport(analysis, f, new Date().toLocaleDateString()),
+                "text/markdown",
+              )
+            }
+          >
+            Download report
+          </button>
           <Link href="/import" className="btn-primary">
             Import data
           </Link>

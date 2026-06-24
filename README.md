@@ -94,6 +94,8 @@ units are normalized on import.
 - **Display units:** a Settings toggle switches the whole app between **yards/mph and
   meters/m·s** — numbers, chart axes, *and* the generated prose all convert; data stays stored
   canonically in yards/mph, and manual entry follows the chosen unit.
+- **Download report:** export a shareable Markdown **bag report** (stock yardages with CIs,
+  gapping, the optimizer ladder, and recommendations) to take to a fitting.
 - **Undo:** destructive actions (clear all, reset to demo, restore, delete shot) offer a
   one-step undo.
 - **Install it:** add to your home screen / install as an app — it works offline.
