@@ -21,6 +21,7 @@ import {
   playingNumbers,
   directionTendency,
   strikeEfficiency,
+  timeTrend,
   type ConfidenceInterval,
   type AdequacyVerdict,
   type TrendVerdict,
@@ -32,6 +33,7 @@ import {
   type PlayingNumbers,
   type DirectionTendency,
   type StrikeEfficiency,
+  type TimeTrend,
 } from "./stats";
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
@@ -60,6 +62,7 @@ export interface ClubAnalysis {
   playing: PlayingNumbers;
   tendency: DirectionTendency;
   efficiency: StrikeEfficiency;
+  timeTrend: TimeTrend;
   sessions: string[];
   shots: Shot[];
 }
@@ -175,6 +178,22 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     const tendency = directionTendency(numeric((s) => s.sideYards));
     const efficiency = strikeEfficiency(numeric((s) => s.smashFactor), cat);
 
+    // Ordered session means (oldest → newest) for the time-series drift.
+    const bySessionTime = new Map<string, { time: string; vals: number[] }>();
+    for (const s of cleanShots) {
+      const v = metricOf(s, settings.metric);
+      if (v == null) continue;
+      const t = s.timestamp || s.sessionId;
+      const e = bySessionTime.get(s.sessionId) ?? { time: t, vals: [] };
+      if (t > e.time) e.time = t;
+      e.vals.push(v);
+      bySessionTime.set(s.sessionId, e);
+    }
+    const orderedMeans = [...bySessionTime.entries()]
+      .sort((a, b) => (a[1].time < b[1].time ? -1 : a[1].time > b[1].time ? 1 : 0))
+      .map(([sessionId, e]) => ({ sessionId, mean: mean(e.vals) }));
+    const tTrend = timeTrend(orderedMeans);
+
     clubs.push({
       club,
       label: clubLabel(club),
@@ -196,6 +215,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       playing,
       tendency,
       efficiency,
+      timeTrend: tTrend,
       // filled in below
       trend: undefined as unknown as TrendVerdict,
       hints: [],

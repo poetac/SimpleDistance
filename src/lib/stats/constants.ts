@@ -96,3 +96,12 @@ export const SMASH_EXPECTED: Record<string, [number, number]> = {
 };
 export const SMASH_LOW_MARGIN = 0.05;
 
+/**
+ * Time-series drift: a club's session means regressed against session order.
+ * Needs at least this many sessions; the slope must exceed MIN_SLOPE (yds per
+ * session) with an R² above MIN_R2 to be called a directional drift.
+ */
+export const TIME_TREND_MIN_SESSIONS = 3;
+export const TIME_TREND_MIN_SLOPE = 1.5;
+export const TIME_TREND_MIN_R2 = 0.5;
+

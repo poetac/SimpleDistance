@@ -134,6 +134,13 @@ export default function ClubDetail() {
           </p>
         )}
         <p className="mt-1 text-sm text-slate-600">{club.trend.message}</p>
+        {club.timeTrend.direction !== "insufficient" && (
+          <p
+            className={`mt-1 text-sm ${club.timeTrend.direction === "stable" ? "text-slate-500" : "text-amber-700"}`}
+          >
+            {club.timeTrend.message}
+          </p>
+        )}
         {club.shotsNeeded.additionalNeeded > 0 && (
           <p className="mt-1 text-sm text-slate-500">
             To reach ±{f.dist(settings.targetCiHalfWidthYards)}, collect about{" "}
