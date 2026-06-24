@@ -10,7 +10,7 @@
 // reason so the user can change their mind.
 
 import type { AppSettings, Shot, YardageMetric } from "./domain/types";
-import { iqrOutliers } from "./stats/outliers";
+import { iqrOutliers, robustZOutliers } from "./stats/outliers";
 
 export type ExclusionReason =
   | "included"
@@ -51,7 +51,11 @@ export function classifyExclusions(
 
   const autoOutlier = new Set<number>();
   if (settings.excludeOutliers && autoCandidates.length >= 4) {
-    const mask = iqrOutliers(autoCandidates.map((c) => c.value)).mask;
+    const values = autoCandidates.map((c) => c.value);
+    const mask =
+      settings.outlierMethod === "robustz"
+        ? robustZOutliers(values).mask
+        : iqrOutliers(values).mask;
     mask.forEach((isOut, i) => {
       if (isOut) autoOutlier.add(autoCandidates[i].idx);
     });

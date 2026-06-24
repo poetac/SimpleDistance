@@ -150,9 +150,22 @@ export default function SettingsPage() {
               checked={local.excludeOutliers}
               onChange={(e) => commit({ excludeOutliers: e.target.checked })}
             />
-            <span className="font-medium text-slate-600">
-              Exclude mishit outliers (IQR fences)
-            </span>
+            <span className="font-medium text-slate-600">Exclude mishit outliers</span>
+          </label>
+
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-600">Outlier method</span>
+            <select
+              className="input"
+              value={local.outlierMethod}
+              disabled={!local.excludeOutliers}
+              onChange={(e) =>
+                commit({ outlierMethod: e.target.value as "iqr" | "robustz" })
+              }
+            >
+              <option value="iqr">IQR fences</option>
+              <option value="robustz">Robust z (MAD)</option>
+            </select>
           </label>
 
           <label className="text-sm">

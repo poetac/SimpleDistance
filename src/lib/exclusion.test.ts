@@ -41,6 +41,14 @@ describe("per-shot exclusion (tri-state)", () => {
     expect(res.find((e) => e.shot.id === "mishit")!.excluded).toBe(false);
   });
 
+  it("supports the robust-z (MAD) outlier method", () => {
+    const shots = [...base, shot("mishit", 90)];
+    const res = classifyExclusions(shots, { ...DEFAULT_SETTINGS, outlierMethod: "robustz" });
+    const mishit = res.find((e) => e.shot.id === "mishit")!;
+    expect(mishit.excluded).toBe(true);
+    expect(mishit.reason).toBe("auto-outlier");
+  });
+
   it("flags shots missing the chosen metric as no-metric (not counted as outliers)", () => {
     const noMetric: Shot = { id: "n", club: "7I", sessionId: "s1", totalYards: 170 };
     const res = classifyExclusions([...base, noMetric], DEFAULT_SETTINGS);

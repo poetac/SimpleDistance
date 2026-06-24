@@ -100,6 +100,8 @@ export interface AppSettings {
   displaySpeed: "mph" | "ms";
   /** Confidence-interval method for the per-club mean: t-interval or percentile bootstrap. */
   ciMethod: "t" | "bootstrap";
+  /** Automatic outlier detector: Tukey IQR fences or MAD-based robust z-score. */
+  outlierMethod: "iqr" | "robustz";
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -112,4 +114,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   displayDistance: "yards",
   displaySpeed: "mph",
   ciMethod: "t",
+  outlierMethod: "iqr",
 };
