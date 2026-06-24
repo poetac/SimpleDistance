@@ -11,3 +11,6 @@ export * from "./trend";
 export * from "./equipment";
 export * from "./dispersion";
 export * from "./stopping";
+export * from "./playing";
+export * from "./tendency";
+export * from "./efficiency";

@@ -18,6 +18,9 @@ import {
   equipmentHints,
   dispersionStats,
   stoppingStats,
+  playingNumbers,
+  directionTendency,
+  strikeEfficiency,
   type ConfidenceInterval,
   type AdequacyVerdict,
   type TrendVerdict,
@@ -26,6 +29,9 @@ import {
   type ClubMetricSummary,
   type DispersionStats,
   type StoppingStats,
+  type PlayingNumbers,
+  type DirectionTendency,
+  type StrikeEfficiency,
 } from "./stats";
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
@@ -51,6 +57,9 @@ export interface ClubAnalysis {
   hints: EquipmentHint[];
   dispersion: DispersionStats;
   stopping: StoppingStats;
+  playing: PlayingNumbers;
+  tendency: DirectionTendency;
+  efficiency: StrikeEfficiency;
   sessions: string[];
   shots: Shot[];
 }
@@ -162,6 +171,9 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       scoringClub: cat === "iron" || cat === "wedge" || cat === "hybrid",
       fmt,
     });
+    const playing = playingNumbers(cleanValues);
+    const tendency = directionTendency(numeric((s) => s.sideYards));
+    const efficiency = strikeEfficiency(numeric((s) => s.smashFactor), cat);
 
     clubs.push({
       club,
@@ -181,6 +193,9 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       adequacy,
       dispersion,
       stopping,
+      playing,
+      tendency,
+      efficiency,
       // filled in below
       trend: undefined as unknown as TrendVerdict,
       hints: [],

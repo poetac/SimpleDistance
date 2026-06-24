@@ -60,3 +60,39 @@ export const MAX_PLAUSIBLE_CARRY_YARDS = 400;
  */
 export const SOFT_ROLL_FRACTION = 0.06;
 export const HOT_ROLL_FRACTION = 0.14;
+
+/**
+ * Carry-consistency grade thresholds, expressed as the coefficient of variation
+ * (carry SD / mean, %). Tighter is better. Deliberately generous and tunable.
+ */
+export const CONSISTENCY_CV_A = 2.5;
+export const CONSISTENCY_CV_B = 4.0;
+export const CONSISTENCY_CV_C = 6.0;
+export const CONSISTENCY_CV_D = 8.0;
+
+/**
+ * Percentile used for the "reliable" carry — the distance you'll carry at least
+ * (100 - this)% of the time. A conservative number to clear a front hazard.
+ */
+export const RELIABLE_CARRY_PERCENTILE = 20;
+
+/**
+ * Directional bias: average side beyond this many yards (with a consistent sign)
+ * is flagged as a left/right tendency rather than centered scatter.
+ */
+export const DIRECTION_BIAS_YARDS = 4;
+
+/**
+ * Strike efficiency: broad, hedged smash-factor expectations per club category.
+ * A club whose mean smash is more than SMASH_LOW_MARGIN below the low end is a
+ * strike-quality hypothesis to check — never a verdict.
+ */
+export const SMASH_EXPECTED: Record<string, [number, number]> = {
+  driver: [1.44, 1.52],
+  wood: [1.42, 1.50],
+  hybrid: [1.38, 1.48],
+  iron: [1.25, 1.45],
+  wedge: [1.0, 1.30],
+};
+export const SMASH_LOW_MARGIN = 0.05;
+
