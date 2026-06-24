@@ -112,6 +112,26 @@ export default function Dashboard() {
 
       <Recommendations recs={analysis.recommendations} />
 
+      {analysis.dataPlan.length > 0 && (
+        <section className="card border-l-4 border-l-slate-400 p-4">
+          <h2 className="mb-1 font-semibold">Collect more data to trust these</h2>
+          <p className="mb-2 text-sm text-slate-500">
+            Shots to reach a trustworthy sample ({analysis.dataPlan.reduce((s, p) => s + p.neededForTrustworthy, 0)} total).
+          </p>
+          <ul className="flex flex-wrap gap-2 text-sm">
+            {analysis.dataPlan.map((p) => (
+              <li
+                key={p.club}
+                className={`rounded-lg px-3 py-1.5 ${p.level === "insufficient" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}
+              >
+                <strong>{p.label}</strong>: +{p.neededForTrustworthy}{" "}
+                <span className="text-xs opacity-70">(have {p.currentN})</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="card p-4">
         <h2 className="mb-1 font-semibold">Gapping</h2>
         <p className="mb-3 text-sm text-slate-500">

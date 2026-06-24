@@ -88,6 +88,19 @@ export function buildBagReport(
     lines.push("");
   }
 
+  // Data collection plan
+  if (analysis.dataPlan.length > 0) {
+    lines.push(`## Collect more data`);
+    lines.push("");
+    lines.push(
+      `To reach trustworthy samples (${analysis.dataPlan.reduce((s, p) => s + p.neededForTrustworthy, 0)} shots total):`,
+    );
+    for (const p of analysis.dataPlan) {
+      lines.push(`- **${p.label}**: +${p.neededForTrustworthy} shots (have ${p.currentN})`);
+    }
+    lines.push("");
+  }
+
   // Recommendations
   lines.push(`## Recommendations`);
   lines.push("");

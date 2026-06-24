@@ -12,6 +12,7 @@ import {
   bootstrapCI,
   shotsNeededForHalfWidth,
   classifyAdequacy,
+  MIN_SHOTS_TRUSTWORTHY,
   analyzeGapping,
   classifyTrend,
   equipmentHints,
@@ -61,12 +62,23 @@ export interface Recommendation {
   text: string;
 }
 
+export interface DataPlanItem {
+  club: ClubId;
+  label: string;
+  currentN: number;
+  /** Additional clean shots to reach a trustworthy sample. */
+  neededForTrustworthy: number;
+  level: "insufficient" | "low";
+}
+
 export interface BagAnalysis {
   clubs: ClubAnalysis[];
   gapping: GapAnalysis;
   bagAdvice: BagAdvice;
   optimization: BagOptimization;
   recommendations: Recommendation[];
+  /** Per-club plan to reach trustworthy sample sizes, prioritized. */
+  dataPlan: DataPlanItem[];
   totalShots: number;
   totalExcluded: number;
   settings: AppSettings;
@@ -258,6 +270,24 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
 
   const recommendations = buildRecommendations(clubs, bagAdvice, fmt);
 
+  // Data-collection plan: how many more clean shots each not-yet-trustworthy
+  // club needs, insufficient samples first.
+  const dataPlan: DataPlanItem[] = clubs
+    .filter((c) => c.adequacy.level !== "trustworthy" && c.n > 0)
+    .map((c) => ({
+      club: c.club,
+      label: c.label,
+      currentN: c.n,
+      neededForTrustworthy: Math.max(0, MIN_SHOTS_TRUSTWORTHY - c.n),
+      level: c.adequacy.level as "insufficient" | "low",
+    }))
+    .filter((p) => p.neededForTrustworthy > 0)
+    .sort(
+      (a, b) =>
+        (a.level === "insufficient" ? 0 : 1) - (b.level === "insufficient" ? 0 : 1) ||
+        b.neededForTrustworthy - a.neededForTrustworthy,
+    );
+
   return {
     clubs: clubs.sort(
       (a, b) => clubOrderIndex(a.club) - clubOrderIndex(b.club),
@@ -266,6 +296,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     bagAdvice,
     optimization,
     recommendations,
+    dataPlan,
     totalShots: allShots.length,
     totalExcluded,
     settings,
