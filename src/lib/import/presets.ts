@@ -28,9 +28,13 @@ export const PRESETS: ImportPreset[] = [
     id: "trackman",
     label: "TrackMan",
     description:
-      "TrackMan range/combine exports. Rich launch data in yards & mph by default.",
+      "TrackMan range/combine exports. Rich launch + club-delivery data in yards & mph by default.",
     distanceUnit: "yards",
     speedUnit: "mph",
+    // Columns that are hallmarks of a TrackMan export and don't appear as
+    // another vendor's signature, so a rich TrackMan file (which also contains
+    // Spin Axis / Spin Loft / Dynamic Loft) still fingerprints as TrackMan.
+    signature: ["Face to Path", "Curve", "Hang Time"],
     headers: {
       club: ["Club", "Club Name", "Club Type"],
       carryYards: ["Carry", "Carry (yds)", "Carry Distance"],
@@ -44,6 +48,9 @@ export const PRESETS: ImportPreset[] = [
       sideYards: ["Carry Side", "Side", "Side (yds)"],
       apexFt: ["Height", "Apex", "Max Height (ft)"],
       descentAngleDeg: ["Landing Angle", "Descent Angle"],
+      attackAngleDeg: ["Attack Angle", "Angle of Attack"],
+      clubPathDeg: ["Club Path"],
+      faceAngleDeg: ["Face Angle"],
       timestamp: ["Date", "Time", "Date/Time"],
       sessionId: ["Session", "Session Name"],
     },

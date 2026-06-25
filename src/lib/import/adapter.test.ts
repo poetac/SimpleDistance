@@ -102,6 +102,20 @@ describe("ImportAdapter registry + Garmin preset", () => {
     expect(detectPreset(flightscope)).toBe("flightscope");
   });
 
+  it("fingerprints a rich TrackMan export over look-alike vendor signatures", () => {
+    // A full TrackMan export contains Spin Axis (Garmin sig), Spin Loft
+    // (FlightScope sig) and Dynamic Loft (Uneekor sig); its own hallmark
+    // columns must still win.
+    const trackman = [
+      "Date", "Player", "Club", "Club Speed", "Attack Angle", "Club Path",
+      "Face Angle", "Face to Path", "Ball Speed", "Smash Factor", "Launch Angle",
+      "Launch Direction", "Spin Rate", "Spin Axis", "Spin Loft", "Dynamic Loft",
+      "Curve", "Height", "Carry", "Carry Side", "Total", "Side Total",
+      "Landing Angle", "Hang Time",
+    ];
+    expect(detectPreset(trackman)).toBe("trackman");
+  });
+
   it("fingerprints Uneekor and Full Swing via their signatures", () => {
     const uneekor = [
       "Club", "Ball Speed", "Carry", "Back Spin", "Side Spin", "Vertical Angle",

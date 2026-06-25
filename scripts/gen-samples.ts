@@ -21,7 +21,8 @@ function r1(n: number | undefined): string {
   return n == null ? "" : (Math.round(n * 10) / 10).toString();
 }
 
-// --- TrackMan-style (yards, mph) ---
+// --- TrackMan-style (yards, mph; rich export with delivery + TrackMan-only
+// hallmark columns Face to Path / Curve / Hang Time that fingerprint it) ---
 const tmHeader = [
   "Date",
   "Session",
@@ -33,10 +34,18 @@ const tmHeader = [
   "Smash Factor",
   "Launch Angle",
   "Spin Rate",
+  "Spin Axis",
+  "Spin Loft",
   "Launch Direction",
   "Carry Side",
   "Height",
   "Landing Angle",
+  "Attack Angle",
+  "Club Path",
+  "Face Angle",
+  "Face to Path",
+  "Curve",
+  "Hang Time",
 ];
 const tmRows = shots.map((s) => [
   s.timestamp ?? "",
@@ -49,10 +58,18 @@ const tmRows = shots.map((s) => [
   s.smashFactor != null ? s.smashFactor.toFixed(2) : "",
   r1(s.launchAngleDeg),
   s.spinRpm != null ? String(s.spinRpm) : "",
+  r1((s.launchDirectionDeg ?? 0) * -1.5), // spin axis proxy
+  r1((s.launchAngleDeg ?? 0) + 12), // spin loft proxy
   r1(s.launchDirectionDeg),
   r1(s.sideYards),
   s.apexFt != null ? String(s.apexFt) : "",
   r1(s.descentAngleDeg),
+  r1(s.attackAngleDeg),
+  r1(s.clubPathDeg),
+  r1(s.faceAngleDeg),
+  r1((s.faceAngleDeg ?? 0) - (s.clubPathDeg ?? 0)), // face to path (signature col)
+  r1(s.sideYards), // curve proxy (signature col)
+  r1(4 + (s.apexFt ?? 0) / 40), // hang time proxy (signature col)
 ]);
 writeFileSync(join(outDir, "trackman-sample.csv"), csv([tmHeader, ...tmRows]));
 
