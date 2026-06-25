@@ -23,6 +23,7 @@ import {
   strikeEfficiency,
   timeTrend,
   shotShape,
+  bagCoverage,
   type ConfidenceInterval,
   type AdequacyVerdict,
   type TrendVerdict,
@@ -36,6 +37,7 @@ import {
   type StrikeEfficiency,
   type TimeTrend,
   type ShotShapeAnalysis,
+  type BagCoverage,
 } from "./stats";
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
@@ -90,6 +92,7 @@ export interface BagAnalysis {
   clubs: ClubAnalysis[];
   gapping: GapAnalysis;
   bagAdvice: BagAdvice;
+  coverage: BagCoverage;
   optimization: BagOptimization;
   recommendations: Recommendation[];
   /** Per-club plan to reach trustworthy sample sizes, prioritized. */
@@ -297,6 +300,14 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     fmt,
   );
 
+  // Bag coverage across the playable range (reliable clubs).
+  const coverage = bagCoverage(
+    usableClubs
+      .filter((c) => c.adequacy.level !== "insufficient")
+      .map((c) => c.mean),
+    bagAdvice.typicalGapYards,
+  );
+
   // 14-club optimization from the reliable clubs (insufficient-sample clubs are
   // excluded so a noisy mean can't reshape the target ladder).
   const optimization = optimizeBag(
@@ -337,6 +348,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     ),
     gapping,
     bagAdvice,
+    coverage,
     optimization,
     recommendations,
     dataPlan,

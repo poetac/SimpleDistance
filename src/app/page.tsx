@@ -150,6 +150,24 @@ export default function Dashboard() {
             </span>
           )}
         </div>
+        {Number.isFinite(analysis.coverage.rangeYards) &&
+          analysis.coverage.rangeYards > 0 && (
+            <p className="mb-2 text-sm text-slate-600">
+              Covers <strong>{f.d(analysis.coverage.minCarry, 0)}–{f.dist(analysis.coverage.maxCarry, 0)}</strong>{" "}
+              ({Math.round(analysis.coverage.coverage * 100)}% of the range)
+              {analysis.coverage.deadZones.length > 0 && (
+                <>
+                  {" "}
+                  — dead zone
+                  {analysis.coverage.deadZones.length === 1 ? "" : "s"} at{" "}
+                  {analysis.coverage.deadZones
+                    .map((d) => `${f.d(d.fromYards, 0)}–${f.d(d.toYards, 0)}`)
+                    .join(", ")}{" "}
+                  {f.dUnit}.
+                </>
+              )}
+            </p>
+          )}
         {analysis.bagAdvice.items.length === 0 ? (
           <p className="text-sm text-slate-600">
             Your scoring clubs are evenly spaced — no holes, overlaps, or

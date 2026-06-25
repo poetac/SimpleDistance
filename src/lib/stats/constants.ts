@@ -112,3 +112,11 @@ export const TIME_TREND_MIN_R2 = 0.5;
 export const CURVE_SMALL_DEG = 2;
 export const CURVE_BIG_DEG = 6;
 
+/**
+ * Bag coverage: the share of a gap a club can comfortably flex up/down. A dead
+ * zone opens between two clubs when their gap exceeds twice this control radius
+ * (expressed as a fraction of the typical gap, with an absolute floor).
+ */
+export const COVERAGE_CONTROL_FACTOR = 0.6;
+export const COVERAGE_CONTROL_FLOOR_YARDS = 8;
+
