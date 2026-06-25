@@ -14,7 +14,11 @@ export type CanonicalField =
   | "launchDirectionDeg"
   | "sideYards"
   | "apexFt"
-  | "descentAngleDeg";
+  | "descentAngleDeg"
+  | "attackAngleDeg"
+  | "clubPathDeg"
+  | "faceAngleDeg"
+  | "sideSpinRpm";
 
 export interface CanonicalFieldDef {
   key: CanonicalField;
@@ -92,7 +96,7 @@ export const CANONICAL_FIELDS: CanonicalFieldDef[] = [
     key: "spinRpm",
     label: "Spin rate",
     kind: "spin",
-    detect: [/spin\s*rate/i, /\bspin\b/i, /backspin/i],
+    detect: [/spin\s*rate/i, /back\s*spin/i, /total\s*spin/i, /\bspin\b(?!.*axis)/i],
   },
   {
     key: "launchDirectionDeg",
@@ -116,7 +120,31 @@ export const CANONICAL_FIELDS: CanonicalFieldDef[] = [
     key: "descentAngleDeg",
     label: "Descent angle",
     kind: "angle",
-    detect: [/descent/i, /land\s*ang/i, /\baoa\b.*land/i],
+    detect: [/descent/i, /land(ing)?\s*ang/i],
+  },
+  {
+    key: "attackAngleDeg",
+    label: "Angle of attack",
+    kind: "angle",
+    detect: [/attack\s*ang/i, /angle\s*of\s*attack/i, /\baoa\b/i, /\baib\b/i],
+  },
+  {
+    key: "clubPathDeg",
+    label: "Club path",
+    kind: "angle",
+    detect: [/club\s*path/i, /^path$/i, /\bswing\s*path\b/i],
+  },
+  {
+    key: "faceAngleDeg",
+    label: "Face angle",
+    kind: "angle",
+    detect: [/face\s*ang/i, /^face$/i, /face\s*to\s*target/i, /club\s*face/i],
+  },
+  {
+    key: "sideSpinRpm",
+    label: "Side spin",
+    kind: "spin",
+    detect: [/side\s*spin/i, /horizontal\s*spin/i],
   },
 ];
 

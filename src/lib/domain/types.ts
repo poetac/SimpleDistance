@@ -42,6 +42,14 @@ export interface Shot {
   spinRpm?: number;
   launchDirectionDeg?: number;
   descentAngleDeg?: number;
+  /** Angle of attack: + = up, − = down (degrees). */
+  attackAngleDeg?: number;
+  /** Club path: + = in-to-out, − = out-to-in (degrees). */
+  clubPathDeg?: number;
+  /** Face angle relative to target: + = open/right, − = closed/left (degrees). */
+  faceAngleDeg?: number;
+  /** Side spin (rpm); + = fade/slice spin for a right-hander. */
+  sideSpinRpm?: number;
 
   /** Source adapter / preset id that produced this shot. */
   source?: string;

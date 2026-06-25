@@ -80,6 +80,48 @@ export default function ClubDetail() {
         />
       </div>
 
+      {/* Playing numbers */}
+      <section className="card p-4">
+        <h2 className="mb-1 font-semibold">
+          Playing numbers
+          {club.playing.consistencyGrade && (
+            <span
+              className={`ml-2 ${club.playing.consistencyGrade <= "B" ? "badge-ok" : club.playing.consistencyGrade === "C" ? "badge-warn" : "badge-danger"}`}
+            >
+              Consistency {club.playing.consistencyGrade}
+            </span>
+          )}
+        </h2>
+        <p className="mb-3 text-sm text-slate-500">
+          The mean is for gapping; on the course play your stock and a reliable carry.
+        </p>
+        <div className="flex flex-wrap gap-3 text-sm">
+          <DispChip label="Stock (median)" value={f.dist(club.playing.stock, 0)} />
+          <DispChip
+            label="Reliable carry"
+            value={f.dist(club.playing.reliable, 0)}
+          />
+          <DispChip label="P25–P75" value={`${f.d(club.playing.p25, 0)}–${f.dist(club.playing.p75, 0)}`} />
+          <DispChip label="Long (P90)" value={f.dist(club.playing.p90, 0)} />
+          {club.playing.carryCv != null && (
+            <DispChip label="Carry CV" value={`${fmt(club.playing.carryCv, 1)}%`} />
+          )}
+        </div>
+        <p className="mt-2 text-sm text-slate-600">{club.tendency.label}</p>
+        {club.shotShape.shape !== "unknown" && (
+          <p className="mt-1 text-sm text-slate-600">
+            <span className="font-medium capitalize">{club.shotShape.shape}</span> — {club.shotShape.label}
+          </p>
+        )}
+        {club.efficiency.meanSmash != null && (
+          <p
+            className={`mt-1 text-sm ${club.efficiency.flagged ? "text-amber-700" : "text-slate-600"}`}
+          >
+            {club.efficiency.note}
+          </p>
+        )}
+      </section>
+
       {/* Adequacy + trend verdicts */}
       <section className="card p-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -97,6 +139,13 @@ export default function ClubDetail() {
           </p>
         )}
         <p className="mt-1 text-sm text-slate-600">{club.trend.message}</p>
+        {club.timeTrend.direction !== "insufficient" && (
+          <p
+            className={`mt-1 text-sm ${club.timeTrend.direction === "stable" ? "text-slate-500" : "text-amber-700"}`}
+          >
+            {club.timeTrend.message}
+          </p>
+        )}
         {club.shotsNeeded.additionalNeeded > 0 && (
           <p className="mt-1 text-sm text-slate-500">
             To reach ±{f.dist(settings.targetCiHalfWidthYards)}, collect about{" "}

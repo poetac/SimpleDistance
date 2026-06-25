@@ -100,6 +100,12 @@ export function generateSeedShots(seed = 1337): Shot[] {
           sideYards: round1(side),
           apexFt: Math.round(normal(rng, 90 + p.launch * 1.5, 8)),
           descentAngleDeg: round1(normal(rng, p.launch + 30, 2)),
+          // Club-delivery metrics. Driver attacks up; irons/wedges down. A mild
+          // in-to-out path with the face slightly closed to path -> gentle draw.
+          attackAngleDeg: round1(normal(rng, p.club === "DR" ? 2.5 : -4, 1)),
+          clubPathDeg: round1(normal(rng, 1.5, 1.2)),
+          faceAngleDeg: round1(normal(rng, 0.6, 1.2)),
+          sideSpinRpm: Math.round(normal(rng, -350, 300)),
           source: "seed",
         });
       }

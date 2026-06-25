@@ -5,6 +5,7 @@ import type { Shot } from "../domain/types";
 import { normalizeClub } from "../domain/clubs";
 import type { ColumnMapping } from "./mapping";
 import type { RawTable } from "./adapter";
+import { normalizeTimestamp } from "./normalize";
 import {
   metersToYards,
   msToMph,
@@ -25,6 +26,7 @@ export interface SkipReasons {
   missingClub: number;
   unrecognizedClub: number;
   missingDistance: number;
+  duplicate: number;
 }
 
 export interface TransformResult {
@@ -80,6 +82,18 @@ function nonNeg(v: number | undefined): number | undefined {
   return v != null && v >= 0 ? v : undefined;
 }
 
+/**
+ * Signed lateral value, honoring "L"/"R" / "left"/"right" suffixes that strip to
+ * an unsigned number. + = right of target. Returns undefined when empty.
+ */
+function signedSide(raw: string | undefined): number | undefined {
+  const mag = num(raw);
+  if (mag == null) return undefined;
+  if (raw && /\b(l|left)\b/i.test(raw)) return -Math.abs(mag);
+  if (raw && /\b(r|right)\b/i.test(raw)) return Math.abs(mag);
+  return mag;
+}
+
 function toYards(v: number | undefined, unit: DetectedDistanceUnit): number | undefined {
   if (v == null) return undefined;
   return unit === "meters" ? metersToYards(v) : v;
@@ -122,8 +136,10 @@ export function rowsToShots(
     missingClub: 0,
     unrecognizedClub: 0,
     missingDistance: 0,
+    duplicate: 0,
   };
   let skipped = 0;
+  const seen = new Set<string>();
 
   const get = (row: Record<string, string>, field: keyof ColumnMapping) => {
     const header = mapping[field];
@@ -159,22 +175,36 @@ export function rowsToShots(
       return;
     }
 
-    const ts = get(row, "timestamp");
+    const { iso: ts, date: tsDate } = normalizeTimestamp(get(row, "timestamp"));
     const sessionFromCol = get(row, "sessionId");
+
+    // Drop exact within-file duplicates (same club/distances/time/session).
+    const dupKey = [
+      club,
+      carry ?? "",
+      total ?? "",
+      ts ?? "",
+      (sessionFromCol && sessionFromCol.trim()) || "",
+      get(row, "ballSpeedMph") ?? "",
+    ].join("|");
+    if (seen.has(dupKey)) {
+      skipReasons.duplicate++;
+      skipped++;
+      return;
+    }
+    seen.add(dupKey);
 
     shots.push({
       id: makeId(opts.source),
       club,
       rawClub: rawClub.trim(),
-      timestamp: ts && ts.trim() !== "" ? ts.trim() : undefined,
+      timestamp: ts,
       sessionId:
-        (sessionFromCol && sessionFromCol.trim()) ||
-        (ts && ts.trim() ? ts.trim().slice(0, 10) : "") ||
-        fallbackSession,
+        (sessionFromCol && sessionFromCol.trim()) || tsDate || fallbackSession,
       carryYards: carry,
       totalYards: total,
       // side can legitimately be negative (left of target); apex cannot.
-      sideYards: toYards(num(get(row, "sideYards")), opts.distanceUnit),
+      sideYards: toYards(signedSide(get(row, "sideYards")), opts.distanceUnit),
       apexFt: nonNeg(num(get(row, "apexFt"))),
       ballSpeedMph: toMph(num(get(row, "ballSpeedMph")), opts.speedUnit),
       clubSpeedMph: toMph(num(get(row, "clubSpeedMph")), opts.speedUnit),
@@ -183,6 +213,10 @@ export function rowsToShots(
       spinRpm: num(get(row, "spinRpm")),
       launchDirectionDeg: num(get(row, "launchDirectionDeg")),
       descentAngleDeg: num(get(row, "descentAngleDeg")),
+      attackAngleDeg: num(get(row, "attackAngleDeg")),
+      clubPathDeg: num(get(row, "clubPathDeg")),
+      faceAngleDeg: num(get(row, "faceAngleDeg")),
+      sideSpinRpm: num(get(row, "sideSpinRpm")),
       source: opts.source,
     });
   });

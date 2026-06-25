@@ -63,6 +63,9 @@ the import flow, use the ready-made files in [`/samples`](./samples):
   different club labels (to demonstrate auto-detection, presets, and unit conversion).
 - `samples/garmin-sample.csv` — Garmin Approach R10-style, **yards + mph**, with
   vendor-specific signature columns (Spin Axis / Roll Distance) the registry fingerprints.
+- `samples/foresight-sample.csv` — Foresight GCQuad-style with full club-delivery data
+  (angle of attack, club path, face angle, side spin).
+- `samples/flightscope-sample.csv` — FlightScope Mevo+-style (spin loft / lateral signatures).
 
 Go to **Import → choose a sample → confirm**. Both reproduce the identical insight because
 units are normalized on import.
@@ -83,10 +86,12 @@ units are normalized on import.
   view can caveat condition-driven differences.
 - **Shots page:** add, **edit**, and delete individual shots; filter by club; toggle whether
   each shot feeds the stats.
-- **Club detail:** carry distribution, session-over-session trend, a **dispersion scatter**
-  (side vs. carry) with side SD / P75 / strike-consistency stats, hedged equipment-vs-swing
-  hints, and a per-shot **Auto / force-include / force-exclude** control (mishits are flagged
-  and counted, never deleted).
+- **Club detail:** **playing numbers** (robust stock, a conservative reliable carry,
+  P25/P75/P90, and an A–F consistency grade), **direction tendency**, **strike efficiency**
+  (smash vs. a hedged expected band), **shot shape** (face-to-path → draw/fade/etc. where
+  delivery data exists), **time-series drift** across sessions, carry distribution, a
+  **dispersion scatter**, stopping power, hedged equipment hints, and a per-shot
+  **Auto / force-include / force-exclude** control (mishits flagged and counted, never deleted).
 - **Settings:** choose carry vs. total, toggle outlier exclusion, tune the target CI width and
   the trend thresholds, edit the club-alias table, and **export a JSON backup or CSV** /
   **restore** a backup (merge or replace). Because storage is per-browser, this is how you keep

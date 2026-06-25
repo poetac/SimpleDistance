@@ -36,7 +36,12 @@ export default function ImportPage() {
     added: number;
     warnings: string[];
     skipped: number;
-    skipReasons?: { missingClub: number; unrecognizedClub: number; missingDistance: number };
+    skipReasons?: {
+      missingClub: number;
+      unrecognizedClub: number;
+      missingDistance: number;
+      duplicate: number;
+    };
   } | null>(null);
   const [error, setError] = useState<string>("");
 
@@ -321,6 +326,7 @@ export default function ImportPage() {
                     r.missingClub && `${r.missingClub} missing club`,
                     r.unrecognizedClub && `${r.unrecognizedClub} unrecognized club`,
                     r.missingDistance && `${r.missingDistance} missing distance`,
+                    r.duplicate && `${r.duplicate} duplicate`,
                   ].filter(Boolean);
                   return parts.length ? ` — ${parts.join(", ")}.` : ".";
                 })()}

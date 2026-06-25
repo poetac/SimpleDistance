@@ -75,4 +75,34 @@ describe("ImportAdapter registry + Garmin preset", () => {
       detectPreset(["Selected Club", "Carry (m)", "Ball Speed (m/s)", "Bay"]),
     ).toBe("inrange");
   });
+
+  it("fingerprints Foresight and FlightScope via their signatures", () => {
+    const foresight = [
+      "Club", "Ball Speed", "Carry", "Back Spin", "Side Spin", "Peak Height",
+      "Angle of Attack", "Club Path", "Face Angle",
+    ];
+    const flightscope = [
+      "Club Type", "Ball Speed", "Carry", "Spin Rate", "Spin Loft", "Side Spin",
+      "Lateral", "Vertical Launch", "Club Path", "Face Angle",
+    ];
+    expect(detectPreset(foresight)).toBe("foresight");
+    expect(detectPreset(flightscope)).toBe("flightscope");
+  });
+
+  it("captures the new delivery fields (face/path/AoA/side spin)", () => {
+    const table: RawTable = {
+      headers: ["Club", "Carry", "Angle of Attack", "Club Path", "Face Angle", "Side Spin"],
+      rows: [{
+        Club: "7 Iron", Carry: "162", "Angle of Attack": "-4.2",
+        "Club Path": "1.5", "Face Angle": "0.6", "Side Spin": "-300",
+      }],
+    };
+    const adapter = detectFileAdapter(table);
+    const res = adapter.parse(table, {});
+    const shot = res.shots[0];
+    expect(shot.attackAngleDeg).toBeCloseTo(-4.2, 1);
+    expect(shot.clubPathDeg).toBeCloseTo(1.5, 1);
+    expect(shot.faceAngleDeg).toBeCloseTo(0.6, 1);
+    expect(shot.sideSpinRpm).toBeCloseTo(-300, 0);
+  });
 });

@@ -33,8 +33,10 @@ export function buildBagReport(
   // Stock yardages
   lines.push(`## Stock yardages`);
   lines.push("");
-  lines.push(`| Club | N | Mean (${unit}) | 95% CI | Sample | Trend |`);
-  lines.push(`| --- | --: | --: | --- | --- | --- |`);
+  lines.push(
+    `| Club | N | Mean (${unit}) | Stock | Reliable | Cons | 95% CI | Sample | Trend |`,
+  );
+  lines.push(`| --- | --: | --: | --: | --: | :-: | --- | --- | --- |`);
   for (const c of clubs) {
     const ci = Number.isFinite(c.ci.lower)
       ? `${fmt.d(c.ci.lower, 1)}–${fmt.d(c.ci.upper, 1)}`
@@ -45,10 +47,18 @@ export function buildBagReport(
         : c.trend.classification === "noise"
           ? "noise"
           : "—";
+    const stock = Number.isFinite(c.playing.stock) ? fmt.d(c.playing.stock, 0) : "—";
+    const reliable = Number.isFinite(c.playing.reliable)
+      ? fmt.d(c.playing.reliable, 0)
+      : "—";
     lines.push(
-      `| ${c.label} | ${c.n} | ${Number.isFinite(c.mean) ? fmt.d(c.mean, 1) : "—"} | ${ci} | ${adequacyLabel(c.adequacy.level)} | ${trend} |`,
+      `| ${c.label} | ${c.n} | ${Number.isFinite(c.mean) ? fmt.d(c.mean, 1) : "—"} | ${stock} | ${reliable} | ${c.playing.consistencyGrade ?? "—"} | ${ci} | ${adequacyLabel(c.adequacy.level)} | ${trend} |`,
     );
   }
+  lines.push("");
+  lines.push(
+    `_Stock = robust median carry; Reliable = a conservative carry you'll reach most of the time; Cons = carry-consistency grade (A best)._`,
+  );
   lines.push("");
 
   // Bag structure

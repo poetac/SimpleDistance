@@ -168,6 +168,40 @@ The dashboard sorts actions so you address the highest-leverage problem first
 5. **Insufficient-sample** clubs ("collect ~N more").
 6. **Overlaps** (possible redundancy).
 
+## 8b. Additional per-club analytics
+
+All pure, tested, and hedged; each degrades gracefully when its inputs are absent.
+
+- **Playing numbers** ([`playing.ts`](./src/lib/stats/playing.ts)) — the mean is for gapping;
+  on the course you play the **stock** (robust median), a conservative **reliable** carry (a
+  low percentile you'll reach most of the time, to clear a front hazard), and P25/P75/P90. A
+  carry **consistency grade (A–F)** comes from the coefficient of variation.
+- **Direction tendency** ([`tendency.ts`](./src/lib/stats/tendency.ts)) — mean side bias vs
+  centered scatter, with left/right miss percentages.
+- **Strike efficiency** ([`efficiency.ts`](./src/lib/stats/efficiency.ts)) — mean smash factor
+  vs a broad expected band per club category; a low value is a *strike-quality hypothesis*.
+- **Shot shape** ([`shotShape.ts`](./src/lib/stats/shotShape.ts)) — face-to-path (face − club
+  path) classifies straight / draw / fade / hook / slice with a start-direction read, where
+  delivery data (face angle + club path) exists.
+- **Time-series drift** ([`timeTrend.ts`](./src/lib/stats/timeTrend.ts)) — regresses a club's
+  session-mean carry against session order to flag a steady lengthening/shortening drift
+  (needs ≥3 sessions, a minimum slope, and a minimum R²). Complements the latest-vs-baseline
+  Changes view with a whole-history read.
+
+All thresholds are named constants in [`constants.ts`](./src/lib/stats/constants.ts).
+
+## 8c. Import breadth & robustness
+
+Presets for **TrackMan, Inrange, Garmin, Foresight (GCQuad/GC3), and FlightScope (Mevo+)** are
+fingerprinted by vendor **signature headers** so a look-alike can't win on field-name overlap.
+The canonical schema captures full club delivery (angle of attack, club path, face angle, side
+spin) where present. Parsing is hardened: delimiter (`,`/`;`/tab/`|`) + BOM detection,
+locale-aware numbers, hyphen/underscore club labels, **L/R side suffixes** → signed yards,
+**timestamp normalization** (ISO / common strings / epoch seconds+ms → a session date), and
+**within-file duplicate-row** removal — all surfaced in a categorized quarantine report, with
+post-import plausibility checks. A seeded fuzz test asserts the parser never throws and that
+every row becomes either a shot or a counted skip.
+
 ## 9. Units
 
 Imports are unit-aware. Distances normalize to **yards** (`× 1.09361` from meters), speeds
