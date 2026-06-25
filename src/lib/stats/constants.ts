@@ -120,3 +120,13 @@ export const CURVE_BIG_DEG = 6;
 export const COVERAGE_CONTROL_FACTOR = 0.6;
 export const COVERAGE_CONTROL_FLOOR_YARDS = 8;
 
+/**
+ * Delivery consistency: shot-to-shot coefficient of variation (%) of spin and
+ * launch angle. Below TIGHT it's repeatable; above VARIABLE it's a strike/
+ * delivery-consistency hypothesis. Spin naturally varies more than launch.
+ */
+export const SPIN_CV_TIGHT = 10;
+export const SPIN_CV_VARIABLE = 20;
+export const LAUNCH_CV_TIGHT = 6;
+export const LAUNCH_CV_VARIABLE = 12;
+

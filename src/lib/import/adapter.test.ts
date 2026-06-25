@@ -76,6 +76,19 @@ describe("ImportAdapter registry + Garmin preset", () => {
     ).toBe("inrange");
   });
 
+  it("fingerprints SkyTrak and Rapsodo via their signatures", () => {
+    const skytrak = [
+      "Club", "Ball Speed", "Carry", "Launch Angle", "Side Angle",
+      "Back Spin", "Side Total", "Peak Height",
+    ];
+    const rapsodo = [
+      "Club", "Ball Speed", "Carry", "Launch Angle", "Spin Rate",
+      "Apex Height", "Apex Time", "Shot Type",
+    ];
+    expect(detectPreset(skytrak)).toBe("skytrak");
+    expect(detectPreset(rapsodo)).toBe("rapsodo");
+  });
+
   it("fingerprints Foresight and FlightScope via their signatures", () => {
     const foresight = [
       "Club", "Ball Speed", "Carry", "Back Spin", "Side Spin", "Peak Height",

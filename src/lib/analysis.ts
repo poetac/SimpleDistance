@@ -24,6 +24,7 @@ import {
   timeTrend,
   shotShape,
   bagCoverage,
+  deliveryConsistency,
   type ConfidenceInterval,
   type AdequacyVerdict,
   type TrendVerdict,
@@ -38,6 +39,7 @@ import {
   type TimeTrend,
   type ShotShapeAnalysis,
   type BagCoverage,
+  type DeliveryConsistency,
 } from "./stats";
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
@@ -68,6 +70,7 @@ export interface ClubAnalysis {
   efficiency: StrikeEfficiency;
   timeTrend: TimeTrend;
   shotShape: ShotShapeAnalysis;
+  delivery: DeliveryConsistency;
   sessions: string[];
   shots: Shot[];
 }
@@ -187,6 +190,10 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       face: numeric((s) => s.faceAngleDeg),
       path: numeric((s) => s.clubPathDeg),
     });
+    const delivery = deliveryConsistency({
+      spin: numeric((s) => s.spinRpm),
+      launch: numeric((s) => s.launchAngleDeg),
+    });
 
     // Ordered session means (oldest → newest) for the time-series drift.
     const bySessionTime = new Map<string, { time: string; vals: number[] }>();
@@ -227,6 +234,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       efficiency,
       timeTrend: tTrend,
       shotShape: shape,
+      delivery,
       // filled in below
       trend: undefined as unknown as TrendVerdict,
       hints: [],

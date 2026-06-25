@@ -187,13 +187,20 @@ All pure, tested, and hedged; each degrades gracefully when its inputs are absen
   session-mean carry against session order to flag a steady lengthening/shortening drift
   (needs ≥3 sessions, a minimum slope, and a minimum R²). Complements the latest-vs-baseline
   Changes view with a whole-history read.
+- **Delivery consistency** ([`delivery.ts`](./src/lib/stats/delivery.ts)) — shot-to-shot
+  coefficient of variation of spin and launch angle (tight / moderate / variable). High
+  variation is a *strike-consistency hypothesis*, distinct from the carry-outcome consistency.
+- **Bag coverage** ([`coverage.ts`](./src/lib/stats/coverage.ts)) — across the playable carry
+  range, the share you can hit and the **dead zones** no club covers (each club flexes ± a
+  control radius). A continuous coverage view across the whole bag, shown on the dashboard.
 
 All thresholds are named constants in [`constants.ts`](./src/lib/stats/constants.ts).
 
 ## 8c. Import breadth & robustness
 
-Presets for **TrackMan, Inrange, Garmin, Foresight (GCQuad/GC3), and FlightScope (Mevo+)** are
-fingerprinted by vendor **signature headers** so a look-alike can't win on field-name overlap.
+Presets for **TrackMan, Inrange, Garmin, Foresight (GCQuad/GC3), FlightScope (Mevo+), SkyTrak,
+and Rapsodo (MLM2PRO)** are fingerprinted by vendor **signature headers** so a look-alike can't
+win on field-name overlap.
 The canonical schema captures full club delivery (angle of attack, club path, face angle, side
 spin) where present. Parsing is hardened: delimiter (`,`/`;`/tab/`|`) + BOM detection,
 locale-aware numbers, hyphen/underscore club labels, **L/R side suffixes** → signed yards,

@@ -223,7 +223,79 @@ const flRows = shots.map((s) => [
 ]);
 writeFileSync(join(outDir, "flightscope-sample.csv"), csv([flHeader, ...flRows]));
 
+// --- SkyTrak-style (yards/mph; Side Angle + Side Total signatures) ---
+const skHeader = [
+  "Date",
+  "Club",
+  "Ball Speed",
+  "Club Speed",
+  "Smash Factor",
+  "Carry",
+  "Total",
+  "Launch Angle",
+  "Side Angle",
+  "Back Spin",
+  "Side Total",
+  "Peak Height",
+  "Descent Angle",
+];
+const skRows = shots.map((s) => [
+  s.timestamp ?? "",
+  s.club,
+  r1(s.ballSpeedMph),
+  r1(s.clubSpeedMph),
+  s.smashFactor != null ? s.smashFactor.toFixed(2) : "",
+  r1(s.carryYards),
+  r1(s.totalYards),
+  r1(s.launchAngleDeg),
+  r1(s.launchDirectionDeg),
+  s.spinRpm != null ? String(s.spinRpm) : "",
+  r1(s.sideYards),
+  s.apexFt != null ? String(s.apexFt) : "",
+  r1(s.descentAngleDeg),
+]);
+writeFileSync(join(outDir, "skytrak-sample.csv"), csv([skHeader, ...skRows]));
+
+// --- Rapsodo MLM2PRO-style (yards/mph; Shot Type + Apex Time signatures) ---
+const shotType = (s: (typeof shots)[number]) => {
+  const f2p = (s.faceAngleDeg ?? 0) - (s.clubPathDeg ?? 0);
+  return Math.abs(f2p) < 2 ? "Straight" : f2p < 0 ? "Draw" : "Fade";
+};
+const rpHeader = [
+  "Date",
+  "Club",
+  "Ball Speed",
+  "Club Speed (Estimated)",
+  "Smash Factor (Estimated)",
+  "Carry",
+  "Total",
+  "Launch Angle",
+  "Launch Direction",
+  "Spin Rate",
+  "Apex Height",
+  "Apex Time",
+  "Descent Angle",
+  "Shot Type",
+];
+const rpRows = shots.map((s) => [
+  s.timestamp ?? "",
+  s.club,
+  r1(s.ballSpeedMph),
+  r1(s.clubSpeedMph),
+  s.smashFactor != null ? s.smashFactor.toFixed(2) : "",
+  r1(s.carryYards),
+  r1(s.totalYards),
+  r1(s.launchAngleDeg),
+  r1(s.launchDirectionDeg),
+  s.spinRpm != null ? String(s.spinRpm) : "",
+  s.apexFt != null ? String(s.apexFt) : "",
+  r1(4 + (s.apexFt ?? 0) / 40), // apex time proxy (signature col)
+  r1(s.descentAngleDeg),
+  shotType(s),
+]);
+writeFileSync(join(outDir, "rapsodo-sample.csv"), csv([rpHeader, ...rpRows]));
+
 // eslint-disable-next-line no-console
 console.log(
-  `Wrote ${tmRows.length} TrackMan, ${inRows.length} Inrange, ${gRows.length} Garmin, ${fsRows.length} Foresight, ${flRows.length} FlightScope rows to /samples`,
+  `Wrote ${tmRows.length} TrackMan, ${inRows.length} Inrange, ${gRows.length} Garmin, ${fsRows.length} Foresight, ${flRows.length} FlightScope, ${skRows.length} SkyTrak, ${rpRows.length} Rapsodo rows to /samples`,
 );

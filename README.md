@@ -66,6 +66,7 @@ the import flow, use the ready-made files in [`/samples`](./samples):
 - `samples/foresight-sample.csv` — Foresight GCQuad-style with full club-delivery data
   (angle of attack, club path, face angle, side spin).
 - `samples/flightscope-sample.csv` — FlightScope Mevo+-style (spin loft / lateral signatures).
+- `samples/skytrak-sample.csv` — SkyTrak-style; `samples/rapsodo-sample.csv` — Rapsodo MLM2PRO-style.
 
 Go to **Import → choose a sample → confirm**. Both reproduce the identical insight because
 units are normalized on import.
