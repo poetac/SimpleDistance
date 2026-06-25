@@ -75,8 +75,10 @@ units are normalized on import.
 
 ### Other things you can do
 
-- **Dashboard:** filter the whole analysis to a single **session** vs. all sessions, plus a
-  "Bag structure" panel (typical gap, holes/overlaps/inversions, confidence-gated).
+- **Dashboard:** filter the whole analysis to a single **session** vs. all sessions, a
+  **Capture progress** panel (per-club clean-shot count toward a trustworthy sample — handy
+  mid-range to see which clubs still need balls), plus a "Bag structure" panel (typical gap,
+  holes/overlaps/inversions, confidence-gated).
 - **Optimize:** a **14-club bag optimizer** — an even target gap ladder across your scoring
   clubs (driver/woods kept as anchors) showing which clubs match, which want a loft adjust,
   where to add a club (with a target carry), which are redundant, and whether you're within

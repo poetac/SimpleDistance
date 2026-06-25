@@ -28,6 +28,7 @@ import {
   launchEfficiency,
   type ConfidenceInterval,
   type AdequacyVerdict,
+  type AdequacyLevel,
   type TrendVerdict,
   type EquipmentHint,
   type GapAnalysis,
@@ -94,6 +95,54 @@ export interface DataPlanItem {
   level: "insufficient" | "low";
 }
 
+/** Per-club capture progress toward a trustworthy sample — for live sessions. */
+export interface CaptureProgressItem {
+  club: ClubId;
+  label: string;
+  /** Clean shots feeding the stats. */
+  n: number;
+  /** All shots for the club (clean + excluded mishits). */
+  rawCount: number;
+  /** Clean shots needed for a trustworthy average. */
+  target: number;
+  level: AdequacyLevel;
+  /** Clamped n/target in [0, 1] for a progress bar. */
+  fraction: number;
+}
+
+export interface CaptureProgress {
+  items: CaptureProgressItem[];
+  /** Clubs at a trustworthy sample. */
+  ready: number;
+  /** Clubs with at least one shot. */
+  started: number;
+  target: number;
+}
+
+/** Build a glanceable capture-readiness view from analyzed clubs. */
+export function buildCaptureProgress(
+  clubs: Pick<ClubAnalysis, "club" | "label" | "n" | "rawCount" | "adequacy">[],
+  target: number = MIN_SHOTS_TRUSTWORTHY,
+): CaptureProgress {
+  const items: CaptureProgressItem[] = clubs
+    .map((c) => ({
+      club: c.club,
+      label: c.label,
+      n: c.n,
+      rawCount: c.rawCount,
+      target,
+      level: c.adequacy.level,
+      fraction: target > 0 ? Math.min(1, c.n / target) : 1,
+    }))
+    .sort((a, b) => a.fraction - b.fraction || a.n - b.n);
+  return {
+    items,
+    ready: items.filter((i) => i.level === "trustworthy").length,
+    started: items.length,
+    target,
+  };
+}
+
 export interface BagAnalysis {
   clubs: ClubAnalysis[];
   gapping: GapAnalysis;
@@ -103,6 +152,8 @@ export interface BagAnalysis {
   recommendations: Recommendation[];
   /** Per-club plan to reach trustworthy sample sizes, prioritized. */
   dataPlan: DataPlanItem[];
+  /** Per-club capture readiness for live data-gathering sessions. */
+  captureProgress: CaptureProgress;
   totalShots: number;
   totalExcluded: number;
   settings: AppSettings;
@@ -369,6 +420,7 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     optimization,
     recommendations,
     dataPlan,
+    captureProgress: buildCaptureProgress(clubs),
     totalShots: allShots.length,
     totalExcluded,
     settings,

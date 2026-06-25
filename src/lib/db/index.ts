@@ -93,7 +93,19 @@ export async function getShotsByClub(club: string): Promise<Shot[]> {
 export async function addShots(shots: Shot[]): Promise<void> {
   const db = await getDb();
   const tx = db.transaction("shots", "readwrite");
-  await Promise.all(shots.map((s) => tx.store.put(s)));
+  // Idempotent re-imports use content-derived ids, so a row can overwrite an
+  // existing shot. Preserve the user's manual include/exclude override in that
+  // case — CSV data never carries it, so an import should never clobber it.
+  for (const s of shots) {
+    if (s.excluded == null) {
+      const existing = await tx.store.get(s.id);
+      if (existing && existing.excluded != null) {
+        await tx.store.put({ ...s, excluded: existing.excluded });
+        continue;
+      }
+    }
+    await tx.store.put(s);
+  }
   await tx.done;
 }
 

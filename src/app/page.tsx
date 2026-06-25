@@ -110,6 +110,61 @@ export default function Dashboard() {
         </p>
       )}
 
+      <section className="card p-4" aria-labelledby="capture-progress-heading">
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <h2 id="capture-progress-heading" className="font-semibold">
+            Capture progress
+          </h2>
+          <span className="text-sm text-slate-500">
+            {analysis.captureProgress.ready}/{analysis.captureProgress.started}{" "}
+            clubs ready · target {analysis.captureProgress.target}/club
+          </span>
+        </div>
+        <p className="mb-3 text-sm text-slate-500">
+          Clean shots per club toward a trustworthy average. Least-complete
+          first — keep feeding the amber and red clubs while you&rsquo;re hitting.
+        </p>
+        <ul className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+          {analysis.captureProgress.items.map((c) => {
+            const bar =
+              c.level === "trustworthy"
+                ? "bg-fairway-500"
+                : c.level === "low"
+                  ? "bg-amber-400"
+                  : "bg-rose-400";
+            const remaining = Math.max(0, c.target - c.n);
+            return (
+              <li key={c.club} className="flex items-center gap-3 text-sm">
+                <span className="w-16 shrink-0 font-medium">{c.label}</span>
+                <div
+                  className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100"
+                  role="progressbar"
+                  aria-valuenow={c.n}
+                  aria-valuemin={0}
+                  aria-valuemax={c.target}
+                  aria-label={`${c.label}: ${c.n} of ${c.target} clean shots`}
+                >
+                  <div
+                    className={`h-full rounded-full ${bar}`}
+                    style={{ width: `${Math.round(c.fraction * 100)}%` }}
+                  />
+                </div>
+                <span className="w-24 shrink-0 text-right text-slate-500">
+                  {c.level === "trustworthy" ? (
+                    <span className="text-fairway-700">✓ {c.n}</span>
+                  ) : (
+                    <>
+                      {c.n}/{c.target}{" "}
+                      <span className="text-xs opacity-70">(+{remaining})</span>
+                    </>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
       <Recommendations recs={analysis.recommendations} />
 
       {analysis.dataPlan.length > 0 && (

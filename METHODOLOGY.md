@@ -215,6 +215,17 @@ locale-aware numbers, hyphen/underscore club labels, **L/R side suffixes** → s
 post-import plausibility checks. A seeded fuzz test asserts the parser never throws and that
 every row becomes either a shot or a counted skip.
 
+Shot ids are a **deterministic content hash** (FNV-1a over the same key used for duplicate
+detection: source + club + carry + total + timestamp + session + ball speed), so **re-importing
+the same shots is idempotent** — a later, larger export overwrites the earlier rows instead of
+duplicating them, which makes incremental capture (import a batch, hit more, import again)
+safe. The store-level upsert **preserves a user's manual include/exclude override** on
+overwrite, since CSV data never carries that flag.
+
+For live data-gathering, the dashboard shows a **Capture progress** panel: per-club clean-shot
+count toward a trustworthy sample (`MIN_SHOTS_TRUSTWORTHY`), least-complete first, so it's
+obvious at a glance which clubs still need balls.
+
 ## 9. Units
 
 Imports are unit-aware. Distances normalize to **yards** (`× 1.09361` from meters), speeds

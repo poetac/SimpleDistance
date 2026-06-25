@@ -33,6 +33,20 @@ describe("auto mapping + transform", () => {
     expect(res.shots[1].club).toBe("6I");
   });
 
+  it("assigns content-derived ids so re-importing the same rows is idempotent", () => {
+    const opts = {
+      distanceUnit: "yards" as const,
+      speedUnit: "mph" as const,
+      source: "trackman",
+    };
+    const { mapping } = autoDetectMapping(trackmanTable.headers, "trackman");
+    const first = rowsToShots(trackmanTable, mapping, opts);
+    const second = rowsToShots(trackmanTable, mapping, opts);
+    expect(second.shots.map((s) => s.id)).toEqual(first.shots.map((s) => s.id));
+    // Distinct shots still get distinct ids.
+    expect(first.shots[0].id).not.toBe(first.shots[1].id);
+  });
+
   it("converts meters and m/s for an Inrange-style file", () => {
     const table: RawTable = {
       headers: ["Club", "Carry", "Ball Speed"],
