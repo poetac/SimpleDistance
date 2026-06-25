@@ -193,14 +193,20 @@ All pure, tested, and hedged; each degrades gracefully when its inputs are absen
 - **Bag coverage** ([`coverage.ts`](./src/lib/stats/coverage.ts)) — across the playable carry
   range, the share you can hit and the **dead zones** no club covers (each club flexes ± a
   control radius). A continuous coverage view across the whole bag, shown on the dashboard.
+- **Launch efficiency** ([`launchEfficiency.ts`](./src/lib/stats/launchEfficiency.ts)) — for the
+  **driver and fairway woods only**, compares mean launch angle and mean back spin against
+  broad, speed-agnostic windows and surfaces the classic distance-robbing patterns
+  (low-launch/high-spin, high-launch/low-spin, excess spin) as a *hypothesis to test on a
+  launch monitor* — never a diagnosis. Windows are deliberately wide because optimal numbers
+  depend heavily on club-head speed.
 
 All thresholds are named constants in [`constants.ts`](./src/lib/stats/constants.ts).
 
 ## 8c. Import breadth & robustness
 
 Presets for **TrackMan, Inrange, Garmin, Foresight (GCQuad/GC3), FlightScope (Mevo+), SkyTrak,
-and Rapsodo (MLM2PRO)** are fingerprinted by vendor **signature headers** so a look-alike can't
-win on field-name overlap.
+Rapsodo (MLM2PRO), Uneekor (QED/EYE XO), and Full Swing (KIT)** are fingerprinted by vendor
+**signature headers** so a look-alike can't win on field-name overlap.
 The canonical schema captures full club delivery (angle of attack, club path, face angle, side
 spin) where present. Parsing is hardened: delimiter (`,`/`;`/tab/`|`) + BOM detection,
 locale-aware numbers, hyphen/underscore club labels, **L/R side suffixes** → signed yards,

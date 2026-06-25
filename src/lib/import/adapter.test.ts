@@ -102,6 +102,19 @@ describe("ImportAdapter registry + Garmin preset", () => {
     expect(detectPreset(flightscope)).toBe("flightscope");
   });
 
+  it("fingerprints Uneekor and Full Swing via their signatures", () => {
+    const uneekor = [
+      "Club", "Ball Speed", "Carry", "Back Spin", "Side Spin", "Vertical Angle",
+      "Club Path", "Face Angle", "Dynamic Loft", "Flight Time",
+    ];
+    const fullswing = [
+      "Club", "Ball Speed", "Carry", "Launch Angle", "Spin Rate", "Side Carry",
+      "Side Total", "Club Path", "Face Angle", "Shot Shape",
+    ];
+    expect(detectPreset(uneekor)).toBe("uneekor");
+    expect(detectPreset(fullswing)).toBe("fullswing");
+  });
+
   it("captures the new delivery fields (face/path/AoA/side spin)", () => {
     const table: RawTable = {
       headers: ["Club", "Carry", "Angle of Attack", "Club Path", "Face Angle", "Side Spin"],

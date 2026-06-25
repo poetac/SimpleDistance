@@ -295,7 +295,95 @@ const rpRows = shots.map((s) => [
 ]);
 writeFileSync(join(outDir, "rapsodo-sample.csv"), csv([rpHeader, ...rpRows]));
 
+// --- Uneekor QED/EYE XO-style (yards/mph; Flight Time + Dynamic Loft signatures) ---
+const unHeader = [
+  "Date",
+  "Club",
+  "Ball Speed",
+  "Club Speed",
+  "Smash Factor",
+  "Carry",
+  "Total",
+  "Vertical Angle",
+  "Horizontal Angle",
+  "Back Spin",
+  "Side Spin",
+  "Apex",
+  "Descent Angle",
+  "Attack Angle",
+  "Club Path",
+  "Face Angle",
+  "Dynamic Loft",
+  "Flight Time",
+];
+const unRows = shots.map((s) => [
+  s.timestamp ?? "",
+  s.club,
+  r1(s.ballSpeedMph),
+  r1(s.clubSpeedMph),
+  s.smashFactor != null ? s.smashFactor.toFixed(2) : "",
+  r1(s.carryYards),
+  r1(s.totalYards),
+  r1(s.launchAngleDeg),
+  r1(s.launchDirectionDeg),
+  s.spinRpm != null ? String(s.spinRpm) : "",
+  s.sideSpinRpm != null ? String(s.sideSpinRpm) : "",
+  s.apexFt != null ? String(s.apexFt) : "",
+  r1(s.descentAngleDeg),
+  r1(s.attackAngleDeg),
+  r1(s.clubPathDeg),
+  r1(s.faceAngleDeg),
+  r1((s.launchAngleDeg ?? 0) + 9), // dynamic loft proxy (signature col)
+  r1(4 + (s.apexFt ?? 0) / 35), // flight time proxy (signature col)
+]);
+writeFileSync(join(outDir, "uneekor-sample.csv"), csv([unHeader, ...unRows]));
+
+// --- Full Swing KIT-style (yards/mph; Side Carry + Shot Shape signatures) ---
+const fwShape = (s: (typeof shots)[number]) => {
+  const f2p = (s.faceAngleDeg ?? 0) - (s.clubPathDeg ?? 0);
+  return Math.abs(f2p) < 2 ? "Straight" : f2p < 0 ? "Draw" : "Fade";
+};
+const fwHeader = [
+  "Date",
+  "Club",
+  "Ball Speed",
+  "Club Speed",
+  "Smash Factor",
+  "Carry",
+  "Total",
+  "Launch Angle",
+  "Launch Direction",
+  "Spin Rate",
+  "Side Carry",
+  "Side Total",
+  "Apex",
+  "Descent Angle",
+  "Club Path",
+  "Face Angle",
+  "Shot Shape",
+];
+const fwRows = shots.map((s) => [
+  s.timestamp ?? "",
+  s.club,
+  r1(s.ballSpeedMph),
+  r1(s.clubSpeedMph),
+  s.smashFactor != null ? s.smashFactor.toFixed(2) : "",
+  r1(s.carryYards),
+  r1(s.totalYards),
+  r1(s.launchAngleDeg),
+  r1(s.launchDirectionDeg),
+  s.spinRpm != null ? String(s.spinRpm) : "",
+  r1(s.sideYards),
+  r1(s.sideYards),
+  s.apexFt != null ? String(s.apexFt) : "",
+  r1(s.descentAngleDeg),
+  r1(s.clubPathDeg),
+  r1(s.faceAngleDeg),
+  fwShape(s),
+]);
+writeFileSync(join(outDir, "fullswing-sample.csv"), csv([fwHeader, ...fwRows]));
+
 // eslint-disable-next-line no-console
 console.log(
-  `Wrote ${tmRows.length} TrackMan, ${inRows.length} Inrange, ${gRows.length} Garmin, ${fsRows.length} Foresight, ${flRows.length} FlightScope, ${skRows.length} SkyTrak, ${rpRows.length} Rapsodo rows to /samples`,
+  `Wrote ${tmRows.length} TrackMan, ${inRows.length} Inrange, ${gRows.length} Garmin, ${fsRows.length} Foresight, ${flRows.length} FlightScope, ${skRows.length} SkyTrak, ${rpRows.length} Rapsodo, ${unRows.length} Uneekor, ${fwRows.length} Full Swing rows to /samples`,
 );

@@ -127,6 +127,13 @@ export default function ClubDetail() {
             {club.delivery.note}
           </p>
         )}
+        {club.launchEfficiency.pattern !== "n/a" && (
+          <p
+            className={`mt-1 text-sm ${club.launchEfficiency.flagged ? "text-amber-700" : "text-slate-600"}`}
+          >
+            {club.launchEfficiency.note}
+          </p>
+        )}
       </section>
 
       {/* Adequacy + trend verdicts */}

@@ -1,4 +1,4 @@
-// Ready-made column-mapping presets for TrackMan and Inrange.
+// Ready-made column-mapping presets for the common launch monitors.
 //
 // These are HINTS, not hardcoding: auto-detection (schema.ts detect regexes)
 // runs first; presets fill gaps and supply sensible header names. Users can
@@ -168,6 +168,59 @@ export const PRESETS: ImportPreset[] = [
       spinRpm: ["Spin Rate", "Total Spin"],
       apexFt: ["Apex Height", "Apex"],
       descentAngleDeg: ["Descent Angle", "Land Angle"],
+      timestamp: ["Date", "Time"],
+    },
+  },
+  {
+    id: "uneekor",
+    label: "Uneekor (QED/EYE XO)",
+    description:
+      "Uneekor View/Refine exports. Overhead optical data with full club delivery.",
+    distanceUnit: "yards",
+    speedUnit: "mph",
+    signature: ["Flight Time", "Dynamic Loft"],
+    headers: {
+      club: ["Club", "Club Name"],
+      carryYards: ["Carry", "Carry Distance"],
+      totalYards: ["Total", "Total Distance"],
+      ballSpeedMph: ["Ball Speed"],
+      clubSpeedMph: ["Club Speed", "Club Head Speed"],
+      smashFactor: ["Smash Factor", "Efficiency"],
+      launchAngleDeg: ["Launch Angle", "Vertical Angle"],
+      launchDirectionDeg: ["Horizontal Angle", "Launch Direction"],
+      spinRpm: ["Back Spin", "Spin Rate"],
+      sideSpinRpm: ["Side Spin"],
+      apexFt: ["Apex", "Max Height"],
+      descentAngleDeg: ["Descent Angle", "Landing Angle"],
+      attackAngleDeg: ["Attack Angle", "Angle of Attack"],
+      clubPathDeg: ["Club Path"],
+      faceAngleDeg: ["Face Angle", "Face To Target"],
+      timestamp: ["Date", "Time"],
+    },
+  },
+  {
+    id: "fullswing",
+    label: "Full Swing (KIT)",
+    description:
+      "Full Swing KIT app exports. Ball + club data in yards & mph with shot shape.",
+    distanceUnit: "yards",
+    speedUnit: "mph",
+    signature: ["Side Carry", "Shot Shape"],
+    headers: {
+      club: ["Club", "Club Type"],
+      carryYards: ["Carry", "Carry Distance"],
+      totalYards: ["Total", "Total Distance"],
+      ballSpeedMph: ["Ball Speed"],
+      clubSpeedMph: ["Club Speed", "Club Head Speed"],
+      smashFactor: ["Smash Factor"],
+      launchAngleDeg: ["Launch Angle"],
+      launchDirectionDeg: ["Launch Direction"],
+      spinRpm: ["Spin Rate", "Back Spin"],
+      sideYards: ["Side Carry", "Side Total"],
+      apexFt: ["Apex", "Peak Height"],
+      descentAngleDeg: ["Descent Angle"],
+      clubPathDeg: ["Club Path"],
+      faceAngleDeg: ["Face Angle"],
       timestamp: ["Date", "Time"],
     },
   },
