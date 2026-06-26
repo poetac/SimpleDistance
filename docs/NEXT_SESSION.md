@@ -18,36 +18,57 @@ one-command run, the offline/local-only guarantee, or the test suite.**
 ## What already exists (do NOT rebuild)
 
 **Stack:** Next.js 14 (App Router) + React + TypeScript, Tailwind, Recharts, `papaparse`,
-client-side **IndexedDB** (`idb`). Vitest tests. ESLint (eslint-config-next). CI runs
+client-side **IndexedDB** (`idb`). Vitest (215 tests). ESLint (eslint-config-next). CI runs
 typecheck + lint + test + build.
 
 **Pure, framework-agnostic stats** in `src/lib/stats/` — fully unit-tested, all thresholds
 are named constants in `constants.ts`:
 - `descriptive.ts` (mean/median/trimmed mean/sd/MAD/percentiles), `distributions.ts`
   (in-repo Student-t via Hill + Acklam inverse-normal), `confidence.ts` (t CI + shots-needed),
-  `outliers.ts` (IQR + robust-z), `adequacy.ts` (sample-size verdicts), `gapping.ts`
-  (overlap/hole/inversion), `trend.ts` (real-trend-vs-noise via neighbor interpolation across
-  sessions), `equipment.ts` (hedged equipment-vs-swing hypotheses).
+  `bootstrap.ts` (percentile bootstrap CI), `outliers.ts` (IQR + robust-z),
+  `adequacy.ts` (sample-size verdicts), `gapping.ts` (overlap/hole/inversion),
+  `trend.ts` (real-trend-vs-noise via neighbor interpolation across sessions),
+  `equipment.ts` (hedged equipment-vs-swing hypotheses), `dispersion.ts` (side/carry spread),
+  `stopping.ts` (roll/descent → soft/medium/hot for scoring clubs).
+- `playing.ts` (stock/reliable/P25/P75/P90/A–F grade), `tendency.ts` (left/right/centered),
+  `efficiency.ts` (smash factor vs expected band), `shotShape.ts` (face-to-path → draw/fade/
+  hook/slice), `timeTrend.ts` (session regression drift), `delivery.ts` (spin/launch CV
+  repeatability), `coverage.ts` (bag dead-zone map), `launchEfficiency.ts` (driver/wood
+  launch+spin pattern — low-launch/high-spin etc, hedged hypothesis).
 - `src/lib/analysis.ts` orchestrates these over a `Shot[]` into a `BagAnalysis` +
-  prioritized recommendations. `analyzeBag(shots, settings)` is pure and deterministic.
+  prioritized recommendations + capture progress. `analyzeBag(shots, settings)` is pure and
+  deterministic.
 
-**Domain & import:** `src/lib/domain/` (canonical `Shot` schema, club normalization/order);
-`src/lib/import/` (schema + detection regexes, TrackMan/Inrange presets, auto column mapping,
-locale-aware unit-aware `transform.ts`, `csv.ts`, and an `ImportAdapter` interface + registry
-with built-in adapters — auto-import is a documented stub, no live vendor APIs).
+**Domain & import:** `src/lib/domain/` (canonical `Shot` schema, club normalization/order/
+category); `src/lib/import/` (schema + detection regexes, **9 presets** — TrackMan, Inrange,
+Garmin, Foresight, FlightScope, SkyTrak, Rapsodo, Uneekor, Full Swing — all fingerprinted
+by vendor signature headers with no collisions, auto column mapping, locale-aware unit-aware
+`transform.ts` with deterministic content-hashed shot ids for idempotent re-import, `csv.ts`,
+`ImportAdapter` registry with built-in adapters).
 
-**Persistence:** `src/lib/db/index.ts` — IndexedDB store (shots/aliases/imports/settings),
-deterministic seed of the 5-iron scenario, JSON/CSV export + restore. Storage is isolated
-here; the rest of the app is storage-agnostic.
+**Persistence:** `src/lib/db/index.ts` — IndexedDB store (shots/aliases/imports/sessions/
+settings), deterministic seed of the 5-iron scenario, JSON/CSV export + restore, idempotent
+`addShots` that preserves user's manual include/exclude overrides on re-import. Storage is
+isolated here; the rest of the app is storage-agnostic.
 
-**UI:** `src/app/` — dashboard (bag table + gapping chart + recommendations + session filter),
-club detail (distribution, session trend, dispersion scatter, equipment hints), shots
-(add/edit/delete + list), settings (metric/outliers/target-CI, alias editor, import history,
-backup/restore/reseed/clear). `src/components/` — `DataProvider` (React context over the DB),
-`Nav`, `Recommendations`, `badges`, charts, `usePageTitle`.
+**UI:** `src/app/` — dashboard (bag table + gapping chart + recommendations + capture progress
+panel + session filter + bag structure/coverage), club detail (playing numbers, tendency,
+efficiency, shot shape, delivery consistency, launch efficiency, distribution, session trend,
+dispersion scatter, stopping, equipment hints, per-shot toggle), optimize (14-club bag
+optimizer), changes (session diff with CI-aware comparison + condition warnings), sessions
+(metadata/tagging), shots (add/edit/delete + list), settings (metric/outliers/target-CI,
+display units, alias editor, import history, backup/restore/reseed/clear), import (upload →
+auto-detect → map → confirm).
 
-**Docs:** `README.md`, `METHODOLOGY.md`, sample CSVs in `samples/`, generator in
-`scripts/gen-samples.ts`.
+**Components:** `DataProvider` (React context over the DB + undo), `Nav`, `Recommendations`,
+`ConfirmDialog` (focus-trap/ESC), `UndoBanner`, `badges`, `useFormatter` (yards/meters
+display toggle threaded through all prose generators), `usePageTitle`, charts (Gapping,
+Distribution, Dispersion, SessionTrend), `ServiceWorkerRegister`.
+
+**Other:** installable offline PWA (manifest, service worker, generated icons), 9 sample CSVs
+in `samples/`, generator in `scripts/gen-samples.ts`, `scripts/gen-icons.mjs`.
+
+**Docs:** `README.md`, `METHODOLOGY.md`, `CLAUDE.md`, `PROMPT.md` (original spec).
 
 ## Conventions to keep (non-negotiable)
 
@@ -58,91 +79,54 @@ backup/restore/reseed/clear). `src/components/` — `DataProvider` (React contex
    swing output is *hypotheses with evidence*, always hedged — never a diagnosis.
 4. **Never silently drop or rescale data.** Outliers are flagged and counted, exclusion is
    toggleable; unit conversions are user-confirmable.
-5. **Offline/local only.** No paid APIs, accounts, or services to run. `npm run dev` must work
+5. **Canonical units.** Data is stored in **yards/mph/degrees**. Display conversion goes
+   through `src/lib/format.ts` (`Formatter`) — thread it through any new prose/number, default
+   yards so existing output is unchanged.
+6. **Offline/local only.** No paid APIs, accounts, or services to run. `npm run dev` must work
    from a clean clone.
-6. **Keep it green:** `npm run typecheck && npm run lint && npm test && npm run build` must
+7. **Keep it green:** `npm run typecheck && npm run lint && npm test && npm run build` must
    pass. Add tests with every behavior change. Maintain the a11y baseline (landmarks, labels,
    `scope`, focus, chart text alternatives).
+8. **Always add new stats modules to `src/lib/stats/index.ts`** (barrel export). This is a
+   recurring mistake — forgetting causes cascading import failures.
 
-## Already shipped beyond the original spec (do NOT redo)
+## Ideas for next expansion
 
-- **Per-shot manual exclusions** — tri-state `Shot.excluded` honored by `analyzeBag` via the
-  shared `src/lib/exclusion.ts`; toggles on Shots list + Club detail.
-- **Trend robustness** — `classifyTrend` takes `TrendOptions`, sample-size-weighted overall
-  deviation; `trendMinSessions`/`trendDeviationSE` in Settings.
-- **Session insights** — `src/lib/sessionDiff.ts` + `/changes` route (CI-aware, no false alarms).
-- **Dispersion module** — `src/lib/stats/dispersion.ts` surfaced on Club detail.
-- **Adapter-driven import + Garmin preset** — flow routes through the `ImportAdapter` registry
-  (`detectFileAdapter`), Garmin signature-header fingerprinting, `samples/garmin-sample.csv`.
-- **Accessible confirm dialogs** — `ConfirmDialog` (focus-trap/ESC) replaces native `confirm()`.
-- **Installable offline PWA** — manifest, service worker, generated icons.
+### 1. Coverage visualization
+The bag coverage dead-zone analysis exists (`coverage.ts`) but is prose-only on the dashboard.
+A visual carry-range bar chart showing each club's control radius and the dead zones between
+them would make it immediately actionable.
+- **Accept:** visual component in `src/components/charts/`, rendered on dashboard; accessible;
+  tested; shows dead zones distinctly.
 
-Test suite is ~104 tests across the stats, exclusion, sessionDiff, dispersion, import/adapter,
-and analysis modules. CI runs typecheck + lint + test + build.
+### 2. Before/after equipment comparison
+When a user has sessions with old vs new clubs, a side-by-side comparison showing carry, spin,
+launch, dispersion changes per club. Useful after a fitting or club purchase.
+- **Accept:** pure module with tests; UI surface (could be on `/changes` or a new route);
+  hedged output; handles missing clubs gracefully.
 
-## Fresh backlog (pick top-down; each item lists acceptance criteria)
+### 3. Scoring-distance analysis
+Wedge-specific analysis: approach shot clustering (how tight is 100/125/150?), scoring
+dispersion, and a "proximity estimate" from carry + side. A different lens than the stock-
+yardage view.
+- **Accept:** pure stats module; wedge-category gated; tested; UI card on club detail for
+  wedges.
 
-### ✅ Done (recent rounds)
-- **Bag-recommendation engine** (`src/lib/bagAdvice.ts`), **confidence-gated**: holes/overlaps/
-  inversions with target carries, scoped to the scoring region; advice leaning on a low-sample
-  club is marked `tentative` and de-prioritized. Feeds a "Bag structure" panel.
-- **14-club bag optimizer** (`src/lib/bagOptimizer.ts`): even target gap ladder, anchors,
-  matched/adjust/gap/redundant, budget check. `/optimize` route.
-- **Stopping-power** (`src/lib/stats/stopping.ts`): roll/descent → soft/medium/hot.
-- **Session/round metadata** (`sessions` store, `/sessions` page) + mixed-condition warning in
-  `/changes` via `sessionDiff`'s `conditionWarning`.
-- **Hardened import pipeline**: delimiter (`,`/`;`/tab/`|`) + BOM detection, hyphen/underscore
-  club labels, categorized skip report, `importSanity` plausibility checks.
-- **Component/integration + pipeline-validation tests**: jsdom + Testing Library +
-  fake-indexeddb (`ConfirmDialog`, `DataProvider`), plus an independent synthetic-corpus test
-  proving the corpus→recommendations stack generalizes beyond the demo seed. Suite ~146 tests.
+### 4. Multi-round / on-course tracking
+Track actual on-course round data (club selection per hole, result) alongside range sessions.
+Compare range stock yardages to on-course performance.
+- **Accept:** schema extension (backward compatible); separate view; no regression to range
+  analysis.
 
-### ✅ Also done
-- **Undo** for destructive actions (clear/reseed/restore/delete) via a pre-action snapshot +
-  `UndoBanner`.
-- **Import-flow component test** (jsdom) driving upload → map → confirm.
-- **Display-unit toggle** (yards/meters, mph/m·s) — a `Formatter` threaded through every engine
-  prose generator and all UI numbers/charts; data stays canonical. `src/lib/format.ts`.
-
-### Note: Playwright E2E smoke (deferred — environment-blocked)
+### 5. Playwright E2E smoke (deferred — environment-blocked)
 A real-browser E2E smoke was attempted but the sandbox's network policy blocks Playwright's
-browser-binary CDN (separate from npm), so it can't be installed or verified here. The jsdom
-integration tests (`src/app/page.test.tsx`, `src/components/*.test.tsx`) already render the real
-Dashboard/Optimize/import flow against seeded IndexedDB, covering the data→analysis→render path.
-A future session with open network can add `@playwright/test`, a chromium install, a `webServer`
-config pointing at `npm run dev`, and a smoke spec (load dashboard → navigate to /optimize →
-toggle meters in settings → assert unit changes), wired as a **separate** CI job so it doesn't
-slow the unit run.
+browser-binary CDN. The jsdom integration tests already cover the data→analysis→render path.
+A future session with open network can add Playwright with the pre-installed Chromium at
+`/opt/pw-browsers/chromium`.
 
-### Remaining ideas
-
-### 1. Session/round metadata
-Let users name sessions and tag conditions (indoor/outdoor, wind, temperature, ball). Use tags
-to caveat comparisons (e.g. don't compare an indoor session's carry to outdoor).
-- **Accept:** schema + store changes are backward compatible; `/changes` warns when comparing
-  across differing conditions; tests cover the tagging + comparison gating.
-
-### 2. Display-unit toggle (careful — cross-cutting)
-A global meters/yards (and m/s) *display* toggle, independent of stored canonical yards/mph.
-Note: many human-readable strings (recommendations, trend/adequacy messages, bag advice) bake
-"yds" into prose, so a correct toggle needs those generators to be unit-aware (pass a formatter
-in) — not just the table numbers and chart axes. Do it thoroughly or not at all.
-- **Accept:** stored data stays canonical; numbers, chart axes AND generated prose all convert;
-  tested formatter; no mixed-unit displays.
-
-### 3. Import flow component test
-The integration tests cover persistence but not the upload→map→confirm UI. Add a Testing Library
-test driving the import page with a small in-memory CSV (the transform is already unit-tested;
-this covers the wiring).
-- **Accept:** runs in CI; asserts a mapped import adds shots and shows the done screen.
-
-### 4. Data safety polish
-Undo for destructive actions (or a trash/restore window), an export reminder, and migration to
-OPFS/larger storage if datasets grow.
-
-### 5. Playwright smoke (optional)
-One end-to-end test of the seeded dashboard + a navigation, gated behind a separate script so it
-doesn't slow the unit run.
+### 6. More import presets
+Bushnell Launch Pro, Swing Caddie, Voice Caddie, Awesome Golf. Each needs distinctive
+signature headers and a sample CSV.
 
 ## How to run & verify
 
