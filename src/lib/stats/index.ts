@@ -16,3 +16,6 @@ export * from "./tendency";
 export * from "./efficiency";
 export * from "./timeTrend";
 export * from "./shotShape";
+export * from "./coverage";
+export * from "./delivery";
+export * from "./launchEfficiency";

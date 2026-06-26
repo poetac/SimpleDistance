@@ -120,6 +120,20 @@ export default function ClubDetail() {
             {club.efficiency.note}
           </p>
         )}
+        {(club.delivery.spinCv != null || club.delivery.launchCv != null) && (
+          <p
+            className={`mt-1 text-sm ${club.delivery.spinBand === "variable" || club.delivery.launchBand === "variable" ? "text-amber-700" : "text-slate-600"}`}
+          >
+            {club.delivery.note}
+          </p>
+        )}
+        {club.launchEfficiency.pattern !== "n/a" && (
+          <p
+            className={`mt-1 text-sm ${club.launchEfficiency.flagged ? "text-amber-700" : "text-slate-600"}`}
+          >
+            {club.launchEfficiency.note}
+          </p>
+        )}
       </section>
 
       {/* Adequacy + trend verdicts */}

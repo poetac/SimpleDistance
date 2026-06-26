@@ -23,8 +23,12 @@ import {
   strikeEfficiency,
   timeTrend,
   shotShape,
+  bagCoverage,
+  deliveryConsistency,
+  launchEfficiency,
   type ConfidenceInterval,
   type AdequacyVerdict,
+  type AdequacyLevel,
   type TrendVerdict,
   type EquipmentHint,
   type GapAnalysis,
@@ -36,6 +40,9 @@ import {
   type StrikeEfficiency,
   type TimeTrend,
   type ShotShapeAnalysis,
+  type BagCoverage,
+  type DeliveryConsistency,
+  type LaunchEfficiency,
 } from "./stats";
 import type { ClubSessionStats, TrendOptions } from "./stats/trend";
 import { classifyExclusions } from "./exclusion";
@@ -66,6 +73,8 @@ export interface ClubAnalysis {
   efficiency: StrikeEfficiency;
   timeTrend: TimeTrend;
   shotShape: ShotShapeAnalysis;
+  delivery: DeliveryConsistency;
+  launchEfficiency: LaunchEfficiency;
   sessions: string[];
   shots: Shot[];
 }
@@ -86,14 +95,65 @@ export interface DataPlanItem {
   level: "insufficient" | "low";
 }
 
+/** Per-club capture progress toward a trustworthy sample — for live sessions. */
+export interface CaptureProgressItem {
+  club: ClubId;
+  label: string;
+  /** Clean shots feeding the stats. */
+  n: number;
+  /** All shots for the club (clean + excluded mishits). */
+  rawCount: number;
+  /** Clean shots needed for a trustworthy average. */
+  target: number;
+  level: AdequacyLevel;
+  /** Clamped n/target in [0, 1] for a progress bar. */
+  fraction: number;
+}
+
+export interface CaptureProgress {
+  items: CaptureProgressItem[];
+  /** Clubs at a trustworthy sample. */
+  ready: number;
+  /** Clubs with at least one shot. */
+  started: number;
+  target: number;
+}
+
+/** Build a glanceable capture-readiness view from analyzed clubs. */
+export function buildCaptureProgress(
+  clubs: Pick<ClubAnalysis, "club" | "label" | "n" | "rawCount" | "adequacy">[],
+  target: number = MIN_SHOTS_TRUSTWORTHY,
+): CaptureProgress {
+  const items: CaptureProgressItem[] = clubs
+    .map((c) => ({
+      club: c.club,
+      label: c.label,
+      n: c.n,
+      rawCount: c.rawCount,
+      target,
+      level: c.adequacy.level,
+      fraction: target > 0 ? Math.min(1, c.n / target) : 1,
+    }))
+    .sort((a, b) => a.fraction - b.fraction || a.n - b.n);
+  return {
+    items,
+    ready: items.filter((i) => i.level === "trustworthy").length,
+    started: items.length,
+    target,
+  };
+}
+
 export interface BagAnalysis {
   clubs: ClubAnalysis[];
   gapping: GapAnalysis;
   bagAdvice: BagAdvice;
+  coverage: BagCoverage;
   optimization: BagOptimization;
   recommendations: Recommendation[];
   /** Per-club plan to reach trustworthy sample sizes, prioritized. */
   dataPlan: DataPlanItem[];
+  /** Per-club capture readiness for live data-gathering sessions. */
+  captureProgress: CaptureProgress;
   totalShots: number;
   totalExcluded: number;
   settings: AppSettings;
@@ -184,6 +244,15 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       face: numeric((s) => s.faceAngleDeg),
       path: numeric((s) => s.clubPathDeg),
     });
+    const delivery = deliveryConsistency({
+      spin: numeric((s) => s.spinRpm),
+      launch: numeric((s) => s.launchAngleDeg),
+    });
+    const launchEff = launchEfficiency({
+      launch: numeric((s) => s.launchAngleDeg),
+      spin: numeric((s) => s.spinRpm),
+      category: cat,
+    });
 
     // Ordered session means (oldest → newest) for the time-series drift.
     const bySessionTime = new Map<string, { time: string; vals: number[] }>();
@@ -224,6 +293,8 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
       efficiency,
       timeTrend: tTrend,
       shotShape: shape,
+      delivery,
+      launchEfficiency: launchEff,
       // filled in below
       trend: undefined as unknown as TrendVerdict,
       hints: [],
@@ -297,6 +368,14 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     fmt,
   );
 
+  // Bag coverage across the playable range (reliable clubs).
+  const coverage = bagCoverage(
+    usableClubs
+      .filter((c) => c.adequacy.level !== "insufficient")
+      .map((c) => c.mean),
+    bagAdvice.typicalGapYards,
+  );
+
   // 14-club optimization from the reliable clubs (insufficient-sample clubs are
   // excluded so a noisy mean can't reshape the target ladder).
   const optimization = optimizeBag(
@@ -337,9 +416,11 @@ export function analyzeBag(allShots: Shot[], settings: AppSettings): BagAnalysis
     ),
     gapping,
     bagAdvice,
+    coverage,
     optimization,
     recommendations,
     dataPlan,
+    captureProgress: buildCaptureProgress(clubs),
     totalShots: allShots.length,
     totalExcluded,
     settings,

@@ -66,14 +66,19 @@ the import flow, use the ready-made files in [`/samples`](./samples):
 - `samples/foresight-sample.csv` — Foresight GCQuad-style with full club-delivery data
   (angle of attack, club path, face angle, side spin).
 - `samples/flightscope-sample.csv` — FlightScope Mevo+-style (spin loft / lateral signatures).
+- `samples/skytrak-sample.csv` — SkyTrak-style; `samples/rapsodo-sample.csv` — Rapsodo MLM2PRO-style.
+- `samples/uneekor-sample.csv` — Uneekor QED/EYE XO-style (Flight Time / Dynamic Loft signatures);
+  `samples/fullswing-sample.csv` — Full Swing KIT-style (Side Carry / Shot Shape signatures).
 
 Go to **Import → choose a sample → confirm**. Both reproduce the identical insight because
 units are normalized on import.
 
 ### Other things you can do
 
-- **Dashboard:** filter the whole analysis to a single **session** vs. all sessions, plus a
-  "Bag structure" panel (typical gap, holes/overlaps/inversions, confidence-gated).
+- **Dashboard:** filter the whole analysis to a single **session** vs. all sessions, a
+  **Capture progress** panel (per-club clean-shot count toward a trustworthy sample — handy
+  mid-range to see which clubs still need balls), plus a "Bag structure" panel (typical gap,
+  holes/overlaps/inversions, confidence-gated).
 - **Optimize:** a **14-club bag optimizer** — an even target gap ladder across your scoring
   clubs (driver/woods kept as anchors) showing which clubs match, which want a loft adjust,
   where to add a club (with a target carry), which are redundant, and whether you're within
@@ -89,7 +94,9 @@ units are normalized on import.
 - **Club detail:** **playing numbers** (robust stock, a conservative reliable carry,
   P25/P75/P90, and an A–F consistency grade), **direction tendency**, **strike efficiency**
   (smash vs. a hedged expected band), **shot shape** (face-to-path → draw/fade/etc. where
-  delivery data exists), **time-series drift** across sessions, carry distribution, a
+  delivery data exists), **delivery consistency** (spin/launch repeatability), a
+  **launch-efficiency** note for the driver and woods (low-launch/high-spin and friends,
+  hedged), **time-series drift** across sessions, carry distribution, a
   **dispersion scatter**, stopping power, hedged equipment hints, and a per-shot
   **Auto / force-include / force-exclude** control (mishits flagged and counted, never deleted).
 - **Settings:** choose carry vs. total, toggle outlier exclusion, tune the target CI width and
@@ -180,7 +187,8 @@ yards/meters-aware; **speed** auto-detects mph vs m/s vs km/h by header and magn
 **distance** units rely on the header/preset (magnitude alone can't tell a driver-in-meters
 from a mid-iron-in-yards) and are always user-confirmable in the import UI.
 
-Presets for **TrackMan**, **Inrange**, and **Garmin** live in
+Presets for **TrackMan, Inrange, Garmin, Foresight, FlightScope, SkyTrak, Rapsodo, Uneekor,
+and Full Swing** live in
 [`src/lib/import/presets.ts`](./src/lib/import/presets.ts). They are *hints*, not hardcoded
 column positions — auto-detection always runs and you can override anything. Detection and
 parsing both route through the **`ImportAdapter` registry**: on upload, `detectFileAdapter`

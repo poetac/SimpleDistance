@@ -187,13 +187,26 @@ All pure, tested, and hedged; each degrades gracefully when its inputs are absen
   session-mean carry against session order to flag a steady lengthening/shortening drift
   (needs ≥3 sessions, a minimum slope, and a minimum R²). Complements the latest-vs-baseline
   Changes view with a whole-history read.
+- **Delivery consistency** ([`delivery.ts`](./src/lib/stats/delivery.ts)) — shot-to-shot
+  coefficient of variation of spin and launch angle (tight / moderate / variable). High
+  variation is a *strike-consistency hypothesis*, distinct from the carry-outcome consistency.
+- **Bag coverage** ([`coverage.ts`](./src/lib/stats/coverage.ts)) — across the playable carry
+  range, the share you can hit and the **dead zones** no club covers (each club flexes ± a
+  control radius). A continuous coverage view across the whole bag, shown on the dashboard.
+- **Launch efficiency** ([`launchEfficiency.ts`](./src/lib/stats/launchEfficiency.ts)) — for the
+  **driver and fairway woods only**, compares mean launch angle and mean back spin against
+  broad, speed-agnostic windows and surfaces the classic distance-robbing patterns
+  (low-launch/high-spin, high-launch/low-spin, excess spin) as a *hypothesis to test on a
+  launch monitor* — never a diagnosis. Windows are deliberately wide because optimal numbers
+  depend heavily on club-head speed.
 
 All thresholds are named constants in [`constants.ts`](./src/lib/stats/constants.ts).
 
 ## 8c. Import breadth & robustness
 
-Presets for **TrackMan, Inrange, Garmin, Foresight (GCQuad/GC3), and FlightScope (Mevo+)** are
-fingerprinted by vendor **signature headers** so a look-alike can't win on field-name overlap.
+Presets for **TrackMan, Inrange, Garmin, Foresight (GCQuad/GC3), FlightScope (Mevo+), SkyTrak,
+Rapsodo (MLM2PRO), Uneekor (QED/EYE XO), and Full Swing (KIT)** are fingerprinted by vendor
+**signature headers** so a look-alike can't win on field-name overlap.
 The canonical schema captures full club delivery (angle of attack, club path, face angle, side
 spin) where present. Parsing is hardened: delimiter (`,`/`;`/tab/`|`) + BOM detection,
 locale-aware numbers, hyphen/underscore club labels, **L/R side suffixes** → signed yards,
@@ -201,6 +214,17 @@ locale-aware numbers, hyphen/underscore club labels, **L/R side suffixes** → s
 **within-file duplicate-row** removal — all surfaced in a categorized quarantine report, with
 post-import plausibility checks. A seeded fuzz test asserts the parser never throws and that
 every row becomes either a shot or a counted skip.
+
+Shot ids are a **deterministic content hash** (FNV-1a over the same key used for duplicate
+detection: source + club + carry + total + timestamp + session + ball speed), so **re-importing
+the same shots is idempotent** — a later, larger export overwrites the earlier rows instead of
+duplicating them, which makes incremental capture (import a batch, hit more, import again)
+safe. The store-level upsert **preserves a user's manual include/exclude override** on
+overwrite, since CSV data never carries that flag.
+
+For live data-gathering, the dashboard shows a **Capture progress** panel: per-club clean-shot
+count toward a trustworthy sample (`MIN_SHOTS_TRUSTWORTHY`), least-complete first, so it's
+obvious at a glance which clubs still need balls.
 
 ## 9. Units
 

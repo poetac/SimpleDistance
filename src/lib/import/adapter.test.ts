@@ -76,6 +76,19 @@ describe("ImportAdapter registry + Garmin preset", () => {
     ).toBe("inrange");
   });
 
+  it("fingerprints SkyTrak and Rapsodo via their signatures", () => {
+    const skytrak = [
+      "Club", "Ball Speed", "Carry", "Launch Angle", "Side Angle",
+      "Back Spin", "Side Total", "Peak Height",
+    ];
+    const rapsodo = [
+      "Club", "Ball Speed", "Carry", "Launch Angle", "Spin Rate",
+      "Apex Height", "Apex Time", "Shot Type",
+    ];
+    expect(detectPreset(skytrak)).toBe("skytrak");
+    expect(detectPreset(rapsodo)).toBe("rapsodo");
+  });
+
   it("fingerprints Foresight and FlightScope via their signatures", () => {
     const foresight = [
       "Club", "Ball Speed", "Carry", "Back Spin", "Side Spin", "Peak Height",
@@ -87,6 +100,33 @@ describe("ImportAdapter registry + Garmin preset", () => {
     ];
     expect(detectPreset(foresight)).toBe("foresight");
     expect(detectPreset(flightscope)).toBe("flightscope");
+  });
+
+  it("fingerprints a rich TrackMan export over look-alike vendor signatures", () => {
+    // A full TrackMan export contains Spin Axis (Garmin sig), Spin Loft
+    // (FlightScope sig) and Dynamic Loft (Uneekor sig); its own hallmark
+    // columns must still win.
+    const trackman = [
+      "Date", "Player", "Club", "Club Speed", "Attack Angle", "Club Path",
+      "Face Angle", "Face to Path", "Ball Speed", "Smash Factor", "Launch Angle",
+      "Launch Direction", "Spin Rate", "Spin Axis", "Spin Loft", "Dynamic Loft",
+      "Curve", "Height", "Carry", "Carry Side", "Total", "Side Total",
+      "Landing Angle", "Hang Time",
+    ];
+    expect(detectPreset(trackman)).toBe("trackman");
+  });
+
+  it("fingerprints Uneekor and Full Swing via their signatures", () => {
+    const uneekor = [
+      "Club", "Ball Speed", "Carry", "Back Spin", "Side Spin", "Vertical Angle",
+      "Club Path", "Face Angle", "Dynamic Loft", "Flight Time",
+    ];
+    const fullswing = [
+      "Club", "Ball Speed", "Carry", "Launch Angle", "Spin Rate", "Side Carry",
+      "Side Total", "Club Path", "Face Angle", "Shot Shape",
+    ];
+    expect(detectPreset(uneekor)).toBe("uneekor");
+    expect(detectPreset(fullswing)).toBe("fullswing");
   });
 
   it("captures the new delivery fields (face/path/AoA/side spin)", () => {

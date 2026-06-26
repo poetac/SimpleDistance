@@ -114,14 +114,24 @@ function toMph(v: number | undefined, unit: DetectedSpeedUnit): number | undefin
   return v;
 }
 
-let idCounter = 0;
-function makeId(source: string): string {
-  const g = globalThis as { crypto?: { randomUUID?: () => string } };
-  if (g.crypto?.randomUUID) return `${source}-${g.crypto.randomUUID()}`;
-  idCounter += 1;
-  return `${source}-${Date.now().toString(36)}-${idCounter}-${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+// Deterministic 32-bit FNV-1a hash of a string → short base36 token. Stable
+// across runs and machines so the same shot always gets the same id.
+function hashKey(key: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
+}
+
+// Content-derived shot id. Re-importing the same row (same source + duplicate
+// key) yields the same id, so a later, larger export overwrites rather than
+// duplicating in the store — making incremental imports idempotent. This uses
+// the SAME key as within-file duplicate detection, so id and dedup semantics
+// stay in lockstep.
+function makeId(source: string, dupKey: string): string {
+  return `${source}-${hashKey(dupKey)}`;
 }
 
 export function rowsToShots(
@@ -195,7 +205,7 @@ export function rowsToShots(
     seen.add(dupKey);
 
     shots.push({
-      id: makeId(opts.source),
+      id: makeId(opts.source, dupKey),
       club,
       rawClub: rawClub.trim(),
       timestamp: ts,

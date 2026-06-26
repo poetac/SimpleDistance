@@ -112,3 +112,40 @@ export const TIME_TREND_MIN_R2 = 0.5;
 export const CURVE_SMALL_DEG = 2;
 export const CURVE_BIG_DEG = 6;
 
+/**
+ * Bag coverage: the share of a gap a club can comfortably flex up/down. A dead
+ * zone opens between two clubs when their gap exceeds twice this control radius
+ * (expressed as a fraction of the typical gap, with an absolute floor).
+ */
+export const COVERAGE_CONTROL_FACTOR = 0.6;
+export const COVERAGE_CONTROL_FLOOR_YARDS = 8;
+
+/**
+ * Delivery consistency: shot-to-shot coefficient of variation (%) of spin and
+ * launch angle. Below TIGHT it's repeatable; above VARIABLE it's a strike/
+ * delivery-consistency hypothesis. Spin naturally varies more than launch.
+ */
+export const SPIN_CV_TIGHT = 10;
+export const SPIN_CV_VARIABLE = 20;
+export const LAUNCH_CV_TIGHT = 6;
+export const LAUNCH_CV_VARIABLE = 12;
+
+/**
+ * Launch efficiency (driver & fairway woods only). Broad, speed-agnostic and
+ * deliberately hedged windows for launch angle (degrees) and back spin (rpm).
+ * A mean outside these — especially the classic low-launch / high-spin pattern
+ * — is a distance-optimization HYPOTHESIS to test on a launch monitor, never a
+ * verdict. Optimal launch/spin is highly club-head-speed dependent, so these
+ * are intentionally wide and only ever produce a gently-worded suggestion.
+ */
+export const LAUNCH_WINDOWS: Record<string, [number, number]> = {
+  driver: [11, 16],
+  wood: [10, 16],
+};
+export const SPIN_WINDOWS: Record<string, [number, number]> = {
+  driver: [2000, 3000],
+  wood: [3000, 4500],
+};
+/** Minimum paired launch+spin shots before a launch-efficiency note is offered. */
+export const LAUNCH_EFFICIENCY_MIN_SHOTS = 5;
+
